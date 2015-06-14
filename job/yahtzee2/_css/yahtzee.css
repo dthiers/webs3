@@ -1,0 +1,25 @@
+	.dobbelsteen {
+		width: 30px;
+		height: 30px;
+		border-radius: 5px;
+		border: 1px solid black;
+		background: white;
+		color: red;
+		font-weight: bold;
+		text-align: center;
+		padding: 0.5em;
+		float : left;
+		margin-right: 10px;
+	}
+	#totaal {
+		margin: 50px 0;
+		clear: both;
+		color: white;
+		font-weight: bold;
+	}
+	
+	.locked {
+		background: green;
+		color: white;
+	}
+

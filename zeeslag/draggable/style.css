@@ -1,0 +1,17 @@
+#canvas,
+#draggableShips {
+    display: inline-block;
+    border: 1px solid lightpink;
+}
+
+#canvas {
+    margin-right: 20px;
+}
+#draggableShips {
+    vertical-align: top;
+    border: 1px solid lightpink;
+}
+
+.ship{
+    display: inline-block;
+}

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Javascript &amp; jQuery opdrachten</title>
+<link href="_css/site.css" rel="stylesheet">
+<link href="_css/yahtzee.css" rel="stylesheet">
+<script src="_js/jquery-1.7.2.min.js"></script>
+<script>
+	var totaal = 0;
+	var score  = 0;
+
+	function randomGetal() {
+		var getal = Math.floor((Math.random()*6)+1);
+		return getal;
+	}
+
+	$(document).ready(function() {
+
+			/* De acties wanneer je op de button met id is 'werp1' klikt */
+			$('#werp1').click(function() {
+				totaal = 0;
+				$('.dobbelsteen').each(function(i, domElement){
+						if(domElement.style.backgroundColor != 'green'){
+						$(domElement).html(randomGetal());
+					}
+				});
+
+				// Reken het totaal van de dobbelstenen uit.
+				$('.dobbelsteen').each(function(i, dom){
+						totaal = totaal + parseInt($('#'+this.id).html());
+				});
+
+				$('#totaal').html(totaal);
+			});
+
+			// Set attribute name op clickable
+			$('.dobbelsteen').each(function(i, dom){
+				this.setAttribute('name', 'clickable');
+			});
+
+			//
+			$('.dobbelsteen').click(function(){
+				if(this.style.backgroundColor == 'green'){
+					this.setAttribute('name', 'clickable');
+					this.style.backgroundColor = 'white';
+				}
+				else{
+					this.setAttribute('name', 'unclickable');
+					//$(this).css('backgroundColor', 'green');
+					this.style.backgroundColor = 'green';
+				}
+			});
+	});
+
+
+</script>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <p class="logo">JavaScript <i>&</i> jQuery <i class="mm">KW1C<br>ICT-academie</i></p>
+  </div>
+  <div class="content">
+    <div class="main">
+      <h1>Javascript opdracht Yahtzee</h1>
+			<button id="werp1" type="button" name="werp" >Gooi</button>
+			<div id="d1" class="dobbelsteen">5</div>
+			<div id="d2" class="dobbelsteen">4</div>
+			<div id="d3" class="dobbelsteen">3</div>
+			<div id="d4" class="dobbelsteen">2</div>
+			<div id="d5" class="dobbelsteen">1</div>
+			<div id="totaal"></div>
+	  </div>
+  </div>
+  <div class="footer">
+    <p>JavaScript &amp; jQuery, W. van Bijnen en A. Saebu, BOL 4 - opleiding tot Applicatie ontwikkelaar (2013).</p>
+  </div>
+</div>
+</body>
+</html>

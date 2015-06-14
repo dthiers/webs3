@@ -1,0 +1,38 @@
+body {
+  margin: 0;
+  font-family: Helvetica;
+  font-size: 12px;
+}
+
+.content {
+  padding-top: 100px;
+  width: 500px;
+  height: auto;
+  margin: 0 auto;
+}
+
+.button {
+  text-align: center;
+}
+
+#slideContent {
+  margin-top: 50px;
+  text-align: center;
+
+  border: 1px solid lightpink;
+}
+
+.button button {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid lightpink;
+  background-color: white;
+}
+
+.button button:active {
+  border: 1px dotted lightpink;
+}
+
+.button button:focus {
+  outline: 0;
+}

@@ -1,0 +1,74 @@
+body {
+    font-family: Helvetica;
+}
+
+h1 {
+    text-align: center;
+    font-family: 'Helvetica Neue', Helvetica, sans-serif;
+    font-weight: 100;
+    font-size: 3em;
+}
+
+.error {
+    width: 40%;
+    margin: 0 auto;
+    padding: 10px;
+    color: #620000;
+    border: 1px solid #620000;
+    background-color: #ff9090;
+    display: none;
+}
+
+.correct {
+    width: 40%;
+    margin: 0 auto;
+    padding: 10px;
+    color: #006c0d;
+    border: 1px solid #006c0d;
+    background-color: #7fff8e;
+    display: none;
+}
+
+.quiz {
+    width: 50%;
+    background-color: #e15959;
+    margin: 60px auto;
+    padding: 10px;
+    box-shadow: 0 0 50px #888;
+}
+
+.quiz h2 {
+    color: white;
+    text-align: center;
+    font-weight: normal;
+    font-size: 1.7em;
+}
+
+.quiz ul {
+    width: 50%;
+    margin: 20px auto;
+    list-style-type: none;
+
+    color: white;
+    font-family: Verdana, sans-serif;
+
+}
+
+.quiz input {
+    margin: 10px;
+}
+
+.quiz button {
+    display: block;
+    font-size: 1em;
+    background-color: white;
+    border: 1px solid #490000;
+    margin: 20px auto;
+    padding: 10px;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+#points {
+    text-align: center;
+}

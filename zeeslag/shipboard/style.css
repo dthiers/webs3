@@ -1,0 +1,12 @@
+#canvas,
+#ships {
+    display: inline-block;
+    border: 1px solid lightpink;
+}
+
+#canvas {
+    margin-right: 20px;
+}
+#ships {
+    vertical-align: top;
+}

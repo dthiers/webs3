@@ -1,0 +1,18 @@
+body {
+  margin: 0;
+}
+
+#counter{
+  text-align: center;
+  vertical-align: middle;
+  margin: 0 auto;
+  padding: 50px;
+  border: 1px solid lightgrey;
+
+  font-size: 50px;
+  font-family: helvetica;
+}
+
+#timer {
+  margin-top: 100px;
+}

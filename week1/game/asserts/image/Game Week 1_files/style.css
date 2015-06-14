@@ -1,0 +1,32 @@
+body {
+
+}
+
+.header {
+  min-height: 150px;
+  background-image: url("asserts/image/game_logo.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 500px auto;
+}
+
+.header,
+.score,
+.map,
+.footer {
+  float: left;
+  width: 100%;
+}
+
+.score {
+  height: 100px;
+  text-align: center;
+}
+
+.map {
+  min-height: 613px;
+  margin-bottom: 200px;
+  background-image: url("asserts/image/game_map.png");
+  background-repeat: no-repeat;
+  background-position: center;
+}

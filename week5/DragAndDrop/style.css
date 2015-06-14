@@ -1,0 +1,29 @@
+div {
+  font-size: 80px;
+  text-align: center;
+  font-family: sans-serif;
+  line-height: 100px;
+  width: 100px;
+  height: 100px;
+}
+
+#dragme {
+  background-color: red;
+  cursor: move;
+}
+
+.target {
+  background-color: #00AA00;
+  box-shadow: 0 0 50px #888888;
+  position: absolute;
+}
+
+#target1 {
+  top: 200px;
+  left: 200px;
+}
+
+#target2 {
+  top: 70px;
+  left: 310px;
+}

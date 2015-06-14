@@ -1,0 +1,202 @@
+html {
+  background: linear-gradient(#3720c9, #559bdc);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: 0 150px;
+
+  height: calc(100% - 150px);
+
+  margin-bottom: -150px;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+
+  font-family: Helvetica;
+  font-weight: lighter;
+  color: white;
+}
+
+#menu,
+#menuToggle,
+#menuItems{
+  background-color:#3720c9;
+}
+
+#menu{
+  width: 100%;
+  height: 150px;
+
+  position: fixed;
+  top: 0;
+
+  z-index: 1000;
+}
+
+#menuToggle {
+  width: 20%;
+  height: 35px;
+
+  position: fixed;
+
+  text-align: center;
+  line-height: 35px;
+  font-size: 0.9em !important;
+
+  border: 4px solid white;
+  border-top: none !important;
+}
+
+#menuItems {
+  margin-left: auto;
+  margin-right: auto;
+
+  z-index: 999;
+  position: fixed;
+  top: 0;
+
+  width: 80%;
+  height: 100px;
+
+  display: none;
+
+  text-align: center;
+
+  border: 5px solid white;
+  border-top: none !important;
+}
+
+.item {
+  width: 30%;
+  height: 100%;
+
+  display:inline-block;
+  vertical-align: top;
+}
+
+.item .title,
+.item .title_text{
+  text-align: center;
+  margin: 0 auto;
+  width: 75%;
+}
+
+.item .title{
+  height: 30%;
+  font-size: 0.9em !important;
+  border-bottom: 1px solid white;
+}
+.item .title_text{
+  height: 70%;
+  font-size: 0.75em !important;
+}
+
+/*---------------------
+-----BASIC ELEMENTS----
+----------------------*/
+#page {
+  margin-top: 150px;
+
+  width: 100%;
+  height: 100%;
+  overflow: scroll;
+}
+
+.content_container {
+  width: 80%;
+  min-height: 600px;
+
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/*---------------------
+--------NEWGAME--------
+----------------------*/
+#newGame,
+#currentGames {
+  display: none;
+  border: 5px solid white;
+}
+.content_container.newGame{
+  margin: 0 auto;
+  height: 75%;
+
+  text-align: center;
+}
+
+.content_container.newGame .board,
+.content_container.newGame .ships {
+  display: inline-block;
+  height: 100%;
+  min-height: 500px;
+  border: 1px solid lightpink;
+
+  vertical-align: top;
+}
+
+.container_header{
+  width: 100%;
+  height: 50px;
+
+  font-size: 1.2em !important;
+}
+
+#newGame_canvas{
+  width: 500px;
+  height: 500px;
+
+  background-color: blue;
+}
+.content_container.newGame .board {
+  width: 60%;
+  min-width: 500px;
+}
+.content_container.newGame .ships {
+  width: 30%;
+}
+
+.ships .ship {
+  margin: 10px 0;
+  width: 100%;
+  height: 50px;
+  //border: 1px solid lightgreen;
+  background-color: white;
+}
+/*---------------------
+------END-NEWGAME------
+----------------------*/
+
+/*---------------------
+------CURRENTGAMES-----
+----------------------*/
+
+.content_container.currentGames{
+  margin: 0 auto;
+  height: 75%;
+
+  text-align: center;
+}
+
+/*---------------------
+-----CURRENTGAMES------
+----------------------*/
+
+.result {
+  margin: 0 auto;
+  margin-top: 20px;
+
+  width: 500px;
+  height: 500px;
+
+  overflow: scroll;
+
+  border: 5px solid white;
+
+  display: none;
+}
+
+.clearer {
+  clear: both;
+}

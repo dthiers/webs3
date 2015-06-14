@@ -1,0 +1,51 @@
+body {
+  margin: 0;
+  min-width: 700px;
+}
+
+.header {
+  height: 150px;
+  background-image: url("asserts/image/game_logo.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 500px auto;
+}
+
+.header,
+.score,
+.map {
+  float: left;
+  width: 100%;
+}
+
+.score {
+  height: 100px;
+  text-align: center;
+}
+
+.map {
+  min-height: 613px;
+  background-image: url("asserts/image/game_map.png");
+  background-size: 600px;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.sprite {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  z-index: 100;
+  //background-image: url("asserts/image/game_right.png");
+  background-repeat: no-repeat;
+}
+
+.coin {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  z-index: 99;
+  background-image: url("asserts/image/game_gold.png");
+  background-repeat: no-repeat;
+  background-position: center;
+}

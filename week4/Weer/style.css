@@ -1,0 +1,31 @@
+html {
+  background: linear-gradient(#3720c9, #559bdc);
+  background-size: cover;
+  background-repeat: no-repeat;
+  height: 100%;
+
+  font-family: 'Helvetica Neue';
+  text-align: center;
+  color: white;
+  font-weight: 100;
+  padding: 40px;
+}
+
+h1 {
+  font-size: 2em;
+  font-weight: normal;
+}
+
+input, button {
+  font-size: 1em;
+  padding: 6px;
+  margin: 5px;
+}
+
+#description {
+  margin-top: 40px;
+}
+
+#temp {
+  font-size: 10em;
+}
