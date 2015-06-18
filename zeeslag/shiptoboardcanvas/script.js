@@ -1,6 +1,17 @@
 const AMOUNT_TILES = 10;
 const BOARD = { 1: 'a', 2: 'b', 3: 'c', 4: 'd', 5: 'e', 6: 'f', 7: 'g', 8: 'h', 9: 'i', 10: 'l'};
 
+function getKeyForValueOfX(xValue) {
+    var keyToUse;
+    for (var key in BOARD) {
+        if (BOARD.hasOwnProperty(key)) {
+            if (BOARD[key] === xValue) {
+                keyToUse = key;
+                return parseInt(keyToUse);
+            }
+        }
+    }
+}
 
 const CANVASWIDTH = 500;
 const CANVASHEIGHT = 500;
@@ -11,6 +22,7 @@ var _canvas;
 var _context;
 
 var _cells;
+var _takenCells;
 
 var _cellWidth;
 var _cellHeight;
@@ -38,10 +50,10 @@ var _xPosTemp;
 var _yPosTemp;
 
 var _ships;
-var _shipOnBoard;
 
 var _from;
 var _to;
+var _hoverCanvas;
 
 var _mouse;
 
@@ -74,7 +86,7 @@ function init(){
 function initGame(){
     _cells = [];
     _ships = [];
-    _shipOnBoard = [];
+    _takenCells = [];
     _mouse = {x:0, y:0, pressed:false}
 
     buildCells();
@@ -133,8 +145,16 @@ function drawShipsWithBoardCoordinates(){
             ship.xPos = cell.xPos;
             ship.yPos = cell.yPos;
                 _context.save();
+            // TODO: if vertical
             _context.fillStyle = ship.color;
-            _context.fillRect(ship.xPos, ship.yPos, (ship.length * _cellWidth), _shipHeight);
+            if(ship.isVertical){
+                _context.fillRect(ship.xPos, ship.yPos, _cellWidth, (ship.length * _shipHeight));
+            }
+            else{
+                _context.fillRect(ship.xPos, ship.yPos, (ship.length * _cellWidth), _shipHeight);
+            }
+
+
                 _context.restore();
         }
     }
@@ -147,6 +167,8 @@ function updateBoard(){
     drawGrid();
 
     hoverCursor();
+
+    calculateTakenCells();
 
     drawShipsWithBoardCoordinates();
 }
@@ -187,10 +209,12 @@ function hoverCursor(){
             // TODO: niks, lul.
         }
         else {
-            if(_mouse.pressed && _currentDropShip !== null && _currentDropShip !== undefined){
+            if(_mouse.pressed && _currentShip !== null && _currentShip !== undefined){
                 // TODO: boot tekenen die je sleept!
+                _context.save();
                 _context.fillStyle = _currentShip.color;
                 _context.fillRect(_currentShip.xPos, _currentShip.yPos, (_currentShip.length * _cellWidth), _shipHeight);
+                _context.restore();
                 //snapShipToGrid(_currentShip);
             }
             else{
@@ -204,8 +228,90 @@ function hoverCursor(){
 function addShipToBoard(sx, sy){
     if(_currentShip !== undefined && _currentShip !== null){
         _currentShip.startCell = {x: sx, y: sy};
+        console.log(_currentShip);
+        // TODO: set taken cells
+        calculateTakenCells();
     }
 }
+
+function calculateTakenCells(){
+    var ship;
+    var cell;
+    _takenCells = [];
+
+    for(var i = 0; i < _ships.length; i++){
+        ship = _ships[i];
+        if(ship.startCell.x != null && ship.startCell.x != undefined){
+            if(ship.isVertical){
+                // TODO: vertical uitrekenen
+                // verticaal dus de X variable blijft contanst
+                var startY = ship.startCell.y;
+                for(var y = 0; y < ship.length; y++){
+                    cell = {};
+
+                    cell.x = ship.startCell.x;
+                    cell.y = parseInt(startY + y);
+                    cell.shipId = ship.id;
+
+                    _takenCells.push(cell);
+                }
+            }
+            else {
+                // TODO: horizontaal uitrekenen
+                // horizontaal dus de Y variable blijft constant.
+                var startX = getKeyForValueOfX(ship.startCell.x);
+                for(var x = 0; x < ship.length; x++){
+                    cell = {};
+
+                    cell.x = BOARD[parseInt(startX+x)];
+                    cell.y = ship.startCell.y;
+                    cell.shipId = ship.id;
+
+                    _takenCells.push(cell);
+                }
+            }
+        }
+    }
+}
+
+function getShipOnCell(clickedCell){
+    var cell;
+
+    if(clickedCell !== undefined && clickedCell !== null){
+        for(var i = 0; i < _takenCells.length; i++){
+            cell = _takenCells[i];
+            // TODO: als de aangeklikte cell hetzelfde is een cell in taken, dan wil ik het ship id hebben
+            if(cell.x === clickedCell.x && cell.y === clickedCell.y){
+                // TODO: ID opvragen van die ship.
+                return getShipById(cell.shipId);
+            }
+        }
+    }
+}
+
+function getShipById(id){
+    var ship;
+
+    for(var i = 0; i < _ships.length; i++){
+        ship = _ships[i];
+        if(ship.id === id){
+            return ship;
+        }
+    }
+}
+
+function setReverseShipDirection(ship){
+    if(ship !== undefined && ship !== null){
+        if(ship.isVertical){
+            ship.isVertical = false;
+        }
+        else {
+            ship.isVertical = true;
+        }
+    }
+    console.log(_takenCells);
+}
+
 
 
 $('#canvas').mousemove(function(e){
@@ -214,7 +320,7 @@ $('#canvas').mousemove(function(e){
 });
 $('#canvas').on('click', function(e){
     var temp = getCellUnderMouse();
-    console.log(temp);
+    setReverseShipDirection(getShipOnCell(temp));
 });
 
 
@@ -229,15 +335,21 @@ $('.c').mousedown(function(){
     if(_to != _from){
         var cellForShip = getCellUnderMouse();
         addShipToBoard(cellForShip.x, cellForShip.y);
+        updateBoard();
     }
 
+});
+
+
+$('.c').mousemove(function() {
+   _hoverCanvas = this.id;
 });
 
 
 
 $('#canvas').mouseup(function(){
     $('#ships').trigger('mouseup');
-})
+});
 
 
 /**-------------------------------------------------------------------------------------
@@ -285,7 +397,7 @@ $('#ships').mousedown(function(){
 });
 
 $('#ships').mouseleave(function(){
-    _mouse.pressed = false;
+    //_mouse.pressed = false;
     updateShips();
 });
 
@@ -327,9 +439,9 @@ function updateMouse(e){
     if(_currentShip != null && _mouse.pressed){
         // TODO: binnen het ship canvas wil je niet dat de
         // TODO: een ander x coordinate krijgen
-        _currentShip.xPos = _mouse.x - ((_currentShip.length * _cellWidth) / 2);
+        //_currentShip.xPos = _mouse.x - ((_currentShip.length * _cellWidth) / 2);
+        _currentShip.xPos = _mouse.x - (_cellWidth / 2);
         _currentShip.yPos = _mouse.y - (_shipHeight / 2);
-        console.log(_currentShip.xPos);
 
         // TODO: van ene canvas naar andere transferen?
     }
@@ -399,9 +511,17 @@ function drawShipsOnCanvas(){
 
 function drawDragShip(){
     if(_currentShip !== undefined){
-        _contextShips.fillStyle = _currentShip.color;
-        _contextShips.fillRect(_currentShip.xPos, _currentShip.yPos, (_currentShip.length * _cellWidth), _shipHeight);
-        snapShipToGrid(_currentShip);
+
+        if(_hoverCanvas === 'canvas'){
+            _context.fillStyle = _currentShip.color;
+            _context.fillRect(_currentShip.xPos, _currentShip.yPos, (_currentShip.length * _cellWidth), _shipHeight);
+            snapShipToGrid(_currentShip);
+        }
+        else if(_hoverCanvas === 'ships'){
+            _contextShips.fillStyle = _currentShip.color;
+            _contextShips.fillRect(_currentShip.xPos, _currentShip.yPos, (_currentShip.length * _cellWidth), _shipHeight);
+            snapShipToGrid(_currentShip);
+        }
     }
 }
 
@@ -424,4 +544,13 @@ function swapShips(shipDrag, shipDrop){
         shipDrag.yPos = shipDrop.yPos;
         shipDrop.yPos = _yPosTemp;
     }
+}
+
+
+function setShipVertical(ship){
+    /* Op het moment dat een ship op een startpositie wordt gezet
+     *
+      * - X + Y coordinaten, lengte van het ship gebruiken om te kijken van waar tot waar deze gaat
+      *
+      * */
 }
