@@ -231,17 +231,16 @@ function hoverCursor(){
 function ifShipWithinBoundaries(cellForShip){
     console.log(cellForShip);
 
-    if(_currentShip !== undefined && _currentShip !== null){
-
-        if(_currentShip !== undefined && _currentShip !== null) {
-            // TODO: berekenen of het ship binnen de boundaries valt
-            if(parseInt(cellForShip.xPos + (_currentShip.length * _cellWidth)) <= CANVASWIDTH){
-                addShipToBoard(cellForShip, _currentShip);
-            }
-            else{
-                // TODO: anders terugsturen naar _from
-                sendShipToDock(_currentShip);
-            }
+    if(_currentShip !== undefined && _currentShip !== null) {
+        // TODO: berekenen of het ship binnen de boundaries valt
+        // TODO: verticaal
+        if((parseInt(cellForShip.xPos + (_currentShip.length * _cellWidth)) <= CANVASWIDTH)
+                && parseInt(cellForShip.yPos + _cellHeight) <= CANVASHEIGHT){
+            addShipToBoard(cellForShip, _currentShip);
+        }
+        else{
+            // TODO: anders terugsturen naar _from
+            sendShipToDock(_currentShip);
         }
     }
 }
@@ -354,10 +353,11 @@ $('#canvas').mousemove(function(e){
     updateMouse(e);
     updateBoard();
 });
-$('#canvas').on('click', function(e){
+$('#canvas').on('dblclick', function(e){
     var temp = getCellUnderMouse();
     setReverseShipDirection(getShipOnCell(temp));
 });
+
 
 
 $('.c').mousedown(function(){
@@ -386,6 +386,25 @@ $('#canvas').mouseup(function(){
     $('#ships').trigger('mouseup');
 });
 
+$('#canvas').mouseleave(function(){
+    _context.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT);
+    updateBoard();
+});
+
+
+$('#canvas').mousedown(function(){
+
+    _currentShip = getShipOnCell(getCellUnderMouse());
+    if(_currentShip !== undefined){
+        _fromXPos = _currentShip.xPos;
+        _fromYPos = _currentShip.yPos;
+
+        _yPosTemp = _currentShip.yPos;
+    }
+    console.log(_currentShip);
+    console.log('x:' + _fromXPos + ' - y:' + _fromYPos);
+
+});
 
 /**-------------------------------------------------------------------------------------
  * -------------------------------------------------------------------------------------
