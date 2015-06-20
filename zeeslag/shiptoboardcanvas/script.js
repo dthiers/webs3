@@ -247,6 +247,7 @@ function ifShipWithinBoundaries(cellForShip){
             _currentShip.yPos = _fromYPos;
         }
     }
+    updateBoard();
 }
 
 
@@ -279,7 +280,7 @@ function moveAllowed(ship){
         for (var i = 0; i < _takenCells.length; i++) {
             toCell = moveToCells[c];
             cell = _takenCells[i];
-            console.log('X: ' + toCell.x + '-' + cell.x + ' Y: ' + toCell.y + ' - ' + cell.y);
+            //console.log('X: ' + toCell.x + '-' + cell.x + ' Y: ' + toCell.y + ' - ' + cell.y);
             // als die buiten het bereik van BOARD komt of hoger dan Y is
             if(((    toCell.x === cell.x && toCell.y === cell.y) ||
                 ((  toCell.x == undefined || toCell.x === null) ||
@@ -370,10 +371,8 @@ function getShipById(id){
 }
 
 function setReverseShipDirection(ship){
-    console.log('IM TRYING TO TURN MOTHERFUCKER');
     if(ship !== undefined && ship !== null){
         // TODO: turnAllowed
-        console.log(turnAllowed(ship));
         if(turnAllowed(ship)) {
             if (ship.isVertical == true) {
                 ship.isVertical = false;
@@ -384,7 +383,6 @@ function setReverseShipDirection(ship){
         }
     }
     updateBoard();
-    console.log(_takenCells);
 }
 
 function turnAllowed(ship){
@@ -414,7 +412,7 @@ function turnAllowed(ship){
         for (var i = 0; i < _takenCells.length; i++) {
             toCell = moveToCells[c];
             cell = _takenCells[i];
-            console.log('X: ' + toCell.x + '-' + cell.x + ' Y: ' + toCell.y + ' - ' + cell.y);
+            //console.log('X: ' + toCell.x + '-' + cell.x + ' Y: ' + toCell.y + ' - ' + cell.y);
             // als die buiten het bereik van BOARD komt of hoger dan Y is
             if((    toCell.x === cell.x && toCell.y === cell.y) ||
                 ((  toCell.x == undefined || toCell.x === null) ||
@@ -447,7 +445,7 @@ $('.c').mousedown(function(){
     _mouse.pressed = false;
     _to = _hoverCanvas;
 
-    console.log('beginfase: ' + _to);
+    //console.log('beginfase: ' + _to);
 
     // If to === canvas
 
@@ -455,12 +453,7 @@ $('.c').mousedown(function(){
         var cellForShip = getCellUnderMouse();
         ifShipWithinBoundaries(cellForShip);
     }
-    else if(_to === 'ships'){
-        // TODO: ship terugzetten op een legge plek
-        console.log('to is dit: ' + _to);
-    }
 });
-
 
 
 /**-------------------------------------------------------------------------------------
@@ -528,8 +521,8 @@ $('#ships').mousedown(function(){
 
         _yPosTemp = _currentShip.yPos;
     }
-    console.log(_currentShip);
-    console.log('x:' + _fromXPos + ' - y:' + _fromYPos);
+    //console.log(_currentShip);
+    //console.log('x:' + _fromXPos + ' - y:' + _fromYPos);
 
 }).mouseup(function(){
 
@@ -573,7 +566,6 @@ function buildShips(){
         yPos += _shipHeight;
 
         _ships.push(ship);
-        console.log(ship);
     }
     updateShips();
 }
@@ -708,5 +700,4 @@ function swapShips(shipDrag, shipDrop){
         shipDrag.yPos = shipDrop.yPos;
         shipDrop.yPos = _yPosTemp;
     }
-    console.log(_ships);
 }
