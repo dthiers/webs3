@@ -153,8 +153,6 @@ function drawShipsWithBoardCoordinates(){
             else{
                 _context.fillRect(ship.xPos, ship.yPos, (ship.length * _cellWidth), _shipHeight);
             }
-
-
                 _context.restore();
         }
     }
@@ -228,33 +226,66 @@ function hoverCursor(){
     }
 }
 
+// TODO: deze moet eigenlijk true of false teruggeven
 function ifShipWithinBoundaries(cellForShip){
-    console.log(cellForShip);
 
     if(_currentShip !== undefined && _currentShip !== null) {
-        // TODO: berekenen of het ship binnen de boundaries valt
+        // TODO: horizontaal
+        if(_currentShip.isVertical == false && (parseInt(cellForShip.xPos + (_currentShip.length * _cellWidth)) <= CANVASWIDTH) && moveAllowed(_currentShip)){
+            addShipToBoard(cellForShip, _currentShip);
+        }
         // TODO: verticaal
-        if((parseInt(cellForShip.xPos + (_currentShip.length * _cellWidth)) <= CANVASWIDTH)
-                && parseInt(cellForShip.yPos + _cellHeight) <= CANVASHEIGHT){
+        else if(_currentShip.isVertical == true && (parseInt(cellForShip.yPos + (_currentShip.length * _cellHeight)) <= CANVASHEIGHT) && moveAllowed(_currentShip)){
             addShipToBoard(cellForShip, _currentShip);
         }
         else{
             // TODO: anders terugsturen naar _from
-            sendShipToDock(_currentShip);
+            //sendShipToDock(_currentShip);
         }
     }
 }
 
-function sendShipToDock(ship){
-    ship.startCell.x = null;
-    ship.startCell.y = null;
-    ship.xPos = 0;
-    ship.yPos = _fromYPos;
-    //snapShipToGridCoordinates(ship, _fromCellXPos, _fromCellYpos);
 
-    // TODO: ships netjes terug zetten
+function moveAllowed(ship){
+    var moveToCells = []; // De moveToCells ziet er hier uit als het ship op een andere locatie
+    var cell;
+    var toCell; // voor de laatste loop
+    var mouseCell = getCellUnderMouse(); // vanaf hier gaan kijken of dat het ship geplaatst kan worden
+    var startX = mouseCell.x;
+    var startY = mouseCell.y;
 
-    updateShips();
+    var allowed = true;
+
+    for(var x = 0; x < ship.length; x++){
+        cell = {};
+        if(ship.isVertical === false){
+            cell.x = BOARD[parseInt(getKeyForValueOfX(startX) + x)];
+            cell.y = startY;
+        }
+        else{
+            cell.x = startX;
+            cell.y = parseInt(startY + x);
+            cell.shipId = ship.id;
+        }
+        cell.shipId = ship.id;
+        moveToCells.push(cell);
+    }
+
+    for(var c = 0; c < moveToCells.length; c++) {
+        for (var i = 0; i < _takenCells.length; i++) {
+            toCell = moveToCells[c];
+            cell = _takenCells[i];
+            console.log('X: ' + toCell.x + '-' + cell.x + ' Y: ' + toCell.y + ' - ' + cell.y);
+            // als die buiten het bereik van BOARD komt of hoger dan Y is
+            if(((    toCell.x === cell.x && toCell.y === cell.y) ||
+                ((  toCell.x == undefined || toCell.x === null) ||
+                toCell.y > AMOUNT_TILES)) && toCell.shipId !== cell.shipId){
+                allowed = false;
+                break;
+            }
+        }
+    }
+    return allowed;
 }
 
 
@@ -263,8 +294,7 @@ function addShipToBoard(cell, ship){
         ship.startCell = {x: cell.x, y: cell.y};
         ship.xPos = cell.xPos;
         ship.yPos = cell.yPos;
-        console.log(ship);
-        // TODO: set taken cells
+
         updateBoard();
     }
 }
@@ -336,29 +366,69 @@ function getShipById(id){
 }
 
 function setReverseShipDirection(ship){
+    console.log('IM TRYING TO TURN MOTHERFUCKER');
     if(ship !== undefined && ship !== null){
-        if(ship.isVertical){
-            ship.isVertical = false;
-        }
-        else {
-            ship.isVertical = true;
+        // TODO: turnAllowed
+        console.log(turnAllowed(ship));
+        if(turnAllowed(ship)) {
+            if (ship.isVertical == true) {
+                ship.isVertical = false;
+            }
+            else {
+                ship.isVertical = true;
+            }
         }
     }
     updateBoard();
+    console.log(_takenCells);
 }
 
+function turnAllowed(ship){
+    var moveToCells = [];
+    var cell;
+    var toCell;
+    var startX = ship.startCell.x;
+    var startY = ship.startCell.y;
 
+    var allowed = true;
 
-$('#canvas').mousemove(function(e){
-    updateMouse(e);
-    updateBoard();
-});
-$('#canvas').on('dblclick', function(e){
-    var temp = getCellUnderMouse();
-    setReverseShipDirection(getShipOnCell(temp));
-});
+    // TODO: verticaal -> horizontale vakjes uitrekenen
+    for(var x = 0; x < ship.length; x++){
+        cell = {};
+        if(ship.isVertical){
+            cell.x = BOARD[parseInt(getKeyForValueOfX(startX) + x)];
+            cell.y = startY;
+        }
+        else{
+            cell.x = startX;
+            cell.y = parseInt(startY + x);
+        }
+        moveToCells.push(cell);
+    }
+    // TODO: foreach cell kijken of deze in _takenCells zit BEHALVE DE EERSTE IN MOVETOCELLS
+    for(var c = 1; c < moveToCells.length; c++) {
+        for (var i = 0; i < _takenCells.length; i++) {
+            toCell = moveToCells[c];
+            cell = _takenCells[i];
+            console.log('X: ' + toCell.x + '-' + cell.x + ' Y: ' + toCell.y + ' - ' + cell.y);
+            // als die buiten het bereik van BOARD komt of hoger dan Y is
+            if((    toCell.x === cell.x && toCell.y === cell.y) ||
+                ((  toCell.x == undefined || toCell.x === null) ||
+                    toCell.y > AMOUNT_TILES)){
+                allowed = false;
+                break;
+            }
+        }
+    }
+    return allowed;
+}
 
-
+/**-------------------------------------------------------------------------------------
+ * -------------------------------------------------------------------------------------
+ * -------------------------------------------------------------------------------------
+ * -------------------------------------------------------------------------------------
+ * -------------------------------------------------------------------------------------
+ * -------------------------------------------------------------------------------------**/
 
 $('.c').mousedown(function(){
 
@@ -377,9 +447,26 @@ $('.c').mousedown(function(){
 
 
 $('.c').mousemove(function() {
-   _hoverCanvas = this.id;
+    _hoverCanvas = this.id;
 });
 
+/**-------------------------------------------------------------------------------------
+ * -------------------------------------------------------------------------------------
+ * -------------------------------------------------------------------------------------
+ * -------------------------------------------------------------------------------------
+ * -------------------------------------------------------------------------------------
+ * -------------------------------------------------------------------------------------**/
+
+$('#canvas').mousemove(function(e){
+    updateMouse(e);
+    updateBoard();
+});
+$('#canvas').on('dblclick', function(e){
+    var temp = getCellUnderMouse();
+    _currentShip = getShipOnCell(temp);
+
+    setReverseShipDirection(_currentShip);
+});
 
 
 $('#canvas').mouseup(function(){
@@ -387,7 +474,6 @@ $('#canvas').mouseup(function(){
 });
 
 $('#canvas').mouseleave(function(){
-    _context.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT);
     updateBoard();
 });
 
@@ -395,14 +481,12 @@ $('#canvas').mouseleave(function(){
 $('#canvas').mousedown(function(){
 
     _currentShip = getShipOnCell(getCellUnderMouse());
-    if(_currentShip !== undefined){
+    if(_currentShip !== undefined && _currentShip !== null){
         _fromXPos = _currentShip.xPos;
         _fromYPos = _currentShip.yPos;
 
         _yPosTemp = _currentShip.yPos;
     }
-    console.log(_currentShip);
-    console.log('x:' + _fromXPos + ' - y:' + _fromYPos);
 
 });
 
@@ -412,6 +496,7 @@ $('#canvas').mousedown(function(){
  * -------------------------------------------------------------------------------------
  * -------------------------------------------------------------------------------------
  * -------------------------------------------------------------------------------------**/
+
 
 
 $('#ships').mousemove(function(e){
@@ -455,7 +540,6 @@ $('#ships').mousedown(function(){
 });
 
 $('#ships').mouseleave(function(){
-    //_mouse.pressed = false;
     updateShips();
 });
 
@@ -605,13 +689,4 @@ function swapShips(shipDrag, shipDrop){
         shipDrag.yPos = shipDrop.yPos;
         shipDrop.yPos = _yPosTemp;
     }
-}
-
-
-function setShipVertical(ship){
-    /* Op het moment dat een ship op een startpositie wordt gezet
-     *
-      * - X + Y coordinaten, lengte van het ship gebruiken om te kijken van waar tot waar deze gaat
-      *
-      * */
 }
