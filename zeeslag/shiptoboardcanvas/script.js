@@ -117,7 +117,10 @@ function buildCells(){
 }
 
 function drawGrid(){
+    _context.save();
     for(var i = 0; i < AMOUNT_TILES; i++){
+        _context.strokeStyle = 'pink';
+        _context.globalAlpha = 0.4;
         _context.beginPath();
         _context.moveTo((i * _cellWidth), 0);
         _context.lineTo((i * _cellWidth), CANVASHEIGHT);
@@ -128,6 +131,7 @@ function drawGrid(){
         _context.lineTo(CANVASWIDTH, (i * _cellWidth));
         _context.stroke();
     }
+    _context.restore();
 }
 
 function drawShipsWithBoardCoordinates(){
@@ -137,7 +141,7 @@ function drawShipsWithBoardCoordinates(){
     for(var i = 0; i < _ships.length; i++){
         ship = _ships[i];
 
-        if(ship.startCell.x == null){
+        if(ship.startCell.x == null || (ship === _currentShip && _mouse.pressed)){
             continue;
         }
         else{
@@ -161,14 +165,22 @@ function drawShipsWithBoardCoordinates(){
 
 function updateBoard(){
     _context.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT);
-
     drawGrid();
-
-    hoverCursor();
 
     calculateTakenCells();
 
     drawShipsWithBoardCoordinates();
+    if(_mouse.pressed){
+        drawDragShipBoard();
+    }
+    else{
+        if(_hoverCanvas === 'canvas'){
+            hoverCursor();
+        }
+        else {
+            updateBoard();
+        }
+    }
 }
 
 function getCellUnderMouse(){
@@ -206,22 +218,13 @@ function hoverCursor(){
             || _mouse.y < cell.yPos || _mouse.y > (cell.yPos + _cellHeight)){
             // TODO: niks, lul.
         }
-        else {
-            if(_mouse.pressed && _currentShip !== null && _currentShip !== undefined){
-                // TODO: boot tekenen die je sleept!
-                    _context.save();
-                _context.fillStyle = _currentShip.color;
-                if(_currentShip.isVertical){
-                    _context.fillRect(_currentShip.xPos, _currentShip.yPos,  _cellWidth, (_currentShip.length *_shipHeight));
-                }
-                else{
-                    _context.fillRect(_currentShip.xPos, _currentShip.yPos, (_currentShip.length * _cellWidth), _shipHeight);
-                }
-                    _context.restore();
-            }
-            else{
-                _context.fillRect(cell.xPos, cell.yPos, _cellWidth, _cellHeight);
-            }
+        else{
+                _context.save();
+            _context.strokeStyle = 'black';
+            _context.strokeWidth = '2px';
+            _context.globalAlpha = 1;
+            _context.strokeRect(cell.xPos, cell.yPos, _cellWidth, _cellHeight);
+                _context.restore();
         }
     }
 }
@@ -238,9 +241,10 @@ function ifShipWithinBoundaries(cellForShip){
         else if(_currentShip.isVertical == true && (parseInt(cellForShip.yPos + (_currentShip.length * _cellHeight)) <= CANVASHEIGHT) && moveAllowed(_currentShip)){
             addShipToBoard(cellForShip, _currentShip);
         }
+        // TODO: anders terugsturen naar _from
         else{
-            // TODO: anders terugsturen naar _from
-            //sendShipToDock(_currentShip);
+            _currentShip.xPos = _fromXPos;
+            _currentShip.yPos = _fromYPos;
         }
     }
 }
@@ -430,25 +434,34 @@ function turnAllowed(ship){
  * -------------------------------------------------------------------------------------
  * -------------------------------------------------------------------------------------**/
 
-$('.c').mousedown(function(){
-
-    _from = this.id;
-
-}).mouseup(function(){
-
-    _to = this.id;
-
-    if(_to != _from){
-        var cellForShip = getCellUnderMouse();
-        ifShipWithinBoundaries(cellForShip);
-    }
-
-});
-
-
 $('.c').mousemove(function() {
     _hoverCanvas = this.id;
 });
+
+$('.c').mousedown(function(){
+
+    _mouse.pressed = true;
+    _from = this.id;
+}).mouseup(function(){
+
+    _mouse.pressed = false;
+    _to = _hoverCanvas;
+
+    console.log('beginfase: ' + _to);
+
+    // If to === canvas
+
+    if((_to === 'canvas') ){
+        var cellForShip = getCellUnderMouse();
+        ifShipWithinBoundaries(cellForShip);
+    }
+    else if(_to === 'ships'){
+        // TODO: ship terugzetten op een legge plek
+        console.log('to is dit: ' + _to);
+    }
+});
+
+
 
 /**-------------------------------------------------------------------------------------
  * -------------------------------------------------------------------------------------
@@ -473,7 +486,8 @@ $('#canvas').mouseup(function(){
     $('#ships').trigger('mouseup');
 });
 
-$('#canvas').mouseleave(function(){
+$('#canvas').mouseleave(function(e){
+    updateMouse(e);
     updateBoard();
 });
 
@@ -501,16 +515,7 @@ $('#canvas').mousedown(function(){
 
 $('#ships').mousemove(function(e){
     updateMouse(e);
-    if(_mouse.pressed){
-        _currentDropShip = getSwapShip();
-    }
     updateShips();
-});
-
-$('.c').mousedown(function(){
-    _mouse.pressed = true;
-}).mouseup(function(){
-    _mouse.pressed = false;
 });
 
 
@@ -556,7 +561,12 @@ function buildShips(){
         ship.color = COLOR[i];
 
         ship.id = i;
-        ship.length = i+1;
+        if(i === 0){
+            ship.length = 2;
+        }
+        else{
+            ship.length = i+1;
+        }
         ship.startCell = {x:null, y:null};
         ship.isVertical = false;
 
@@ -627,10 +637,10 @@ function getSwapShip(){
 
 function updateShips(){
     _contextShips.clearRect(0, 0, CANVASSHIPSWIDTH, CANVASSHIPSHEIGHT);
-
     drawShipsOnCanvas();
     if(_mouse.pressed){
-        drawDragShip();
+        _currentDropShip = getSwapShip();
+        drawDragShipDock();
     }
 }
 
@@ -640,10 +650,10 @@ function drawShipsOnCanvas(){
     _contextShips.clearRect(0, 0, CANVASSHIPSWIDTH, CANVASSHIPSHEIGHT);
     for(var i = 0; i < _ships.length; i++){
         ship = _ships[i];
-        if(ship.startCell.x !== null){
+        if(ship.startCell.x !== null || (ship === _currentShip && _mouse.pressed)){
             continue;
         }
-        // TODO: als een ship op het board staat moet ie nu meer getekend worden
+        // TODO: als een ship op het board staat moet ie nu getekend worden
         else{
             _contextShips.fillStyle = ship.color;
             _contextShips.fillRect(ship.xPos, ship.yPos, (_cellWidth * ship.length), _shipHeight);
@@ -651,21 +661,30 @@ function drawShipsOnCanvas(){
     }
 }
 
-function drawDragShip(){
+function drawDragShipDock(){
     if(_currentShip !== undefined && _currentShip !== null){
+            _contextShips.save();
+        _contextShips.fillStyle = _currentShip.color;
+        _contextShips.globalAlpha = 0.8;
+        _contextShips.fillRect(_currentShip.xPos, _currentShip.yPos, (_currentShip.length * _cellWidth), _shipHeight);
+            _contextShips.restore();
+        snapShipToGrid(_currentShip);
+    }
+}
 
-        if(_hoverCanvas === 'canvas'){
-                _context.save();
-            _context.fillStyle = _currentShip.color;
+function drawDragShipBoard(){
+    if(_currentShip !== undefined && _currentShip !== null) {
+        _context.save();
+        _context.fillStyle = _currentShip.color;
+        _context.globalAlpha = 0.8;
+        if (_currentShip.isVertical) {
+            _context.fillRect(_currentShip.xPos, _currentShip.yPos, _cellWidth, (_currentShip.length * _shipHeight));
+        }
+        else {
             _context.fillRect(_currentShip.xPos, _currentShip.yPos, (_currentShip.length * _cellWidth), _shipHeight);
-                _context.restore();
-            snapShipToGrid(_currentShip);
         }
-        else if(_hoverCanvas === 'ships'){
-            _contextShips.fillStyle = _currentShip.color;
-            _contextShips.fillRect(_currentShip.xPos, _currentShip.yPos, (_currentShip.length * _cellWidth), _shipHeight);
-            snapShipToGrid(_currentShip);
-        }
+        _context.restore();
+        snapShipToGrid(_currentShip);
     }
 }
 
@@ -689,4 +708,5 @@ function swapShips(shipDrag, shipDrop){
         shipDrag.yPos = shipDrop.yPos;
         shipDrop.yPos = _yPosTemp;
     }
+    console.log(_ships);
 }
