@@ -42,18 +42,21 @@ function getShips(data){
 
 function genericJSONLoop(data){
   for(var key in data){
-    if(data.hasOwnProperty(key)){
-      // TODO: shit met de data uit het JSON element
-      //console.log("data: " + data[key] + " key: " + key + " stringify: " + data[key].name);
-      for(var subkey in data[key]){
-        if(data[key].hasOwnProperty(subkey)){
-          // TODO: shit met de data uit het JSON element
-          console.log("datakey: " + data[key][subkey] + " key: " + subkey);
+        if(data.hasOwnProperty(key)){
+            // TODO: shit met de data uit het JSON element
+            //console.log("data: " + data[key] + " key: " + key + " stringify: " + data[key].name);
+            for(var subkey in data[key]){
+                if(data[key].hasOwnProperty(subkey)){
+                    // TODO: shit met de data uit het JSON element
+                    console.log("datakey: " + data[key][subkey] + " key: " + subkey);
+                }
+            }
         }
-      }
     }
-  }
 }
+
+
+
 
 function getJSON(link, token){
   $.get(link+token, genericJSONLoop);
@@ -72,22 +75,26 @@ function getCurrentGameIds(data){
 
 }
 
+var Application = function(){
+    // TODO: runt de applicatie
+    /*  - Heeft een collectie van de schepen
+        - Heeft een Board
+        - Heeft interactie met de canvassen
 
-// CLASSES
-var Cel = function(){
+        - InitGame();
+    * */
+}
+
+var Cell = function(){
   /* TODO:  vakje heeft een x en y coordinaat
-
+        - Heeft een x en y coordinaat in de vorm letter - cijfer
   */
 }
 
-var Game = function(){
-  // TODO: basic flow van de game
-}
+
 var Board = function(){
-  /* TODO:  lijst van ships (5 stuks)
-            lijst van cellen
-            houdt per ship bij op welke locatie dat deze staat
-              Of doet een ship dit zelf?
+  /* TODO:
+        - Heeft een collectie van 100 cellen
 
   */
 }
