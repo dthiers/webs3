@@ -63,6 +63,7 @@ var API = function(){
     this.linkShips = "https://zeeslagavans.herokuapp.com/ships";
     this.linkNewGame = "https://zeeslagavans.herokuapp.com/games/AI/";
     this.linkGetGameIds = "https://zeeslagavans.herokuapp.com/games/:id/";
+
 }
 
 API.prototype = {
@@ -70,18 +71,20 @@ API.prototype = {
 
     },
 
-    getShips: function(dock){
+    getShips: function(dock, callBack){
+        var ships = {};
 
-        $.get(this.linkShips+this.token, function(data){
-            data.forEach(function(element, index, array){
-                var ship = new Ship();
-                ship.convertToShip(element);
-                dock._ships.push(ship);
-            });
+        $.ajax({
+            type: "GET",
+            url: this.linkShips+this.token,
+            dataType: "json",
+            success: function(data){
+                ships = { "ships": data };
+                console.log(ships);
+            }
         });
+        callBack(ships);
     },
-
-
 
     getNewGame: function(){
 
@@ -164,7 +167,6 @@ Game.prototype = {
         this.initBoard();
         this.initDock();
 
-        this._JSONShips = null;
 
     },
     initBoard: function(){
@@ -172,10 +174,6 @@ Game.prototype = {
     },
 
     initDock: function(){
-        //this._api.getShips(function(ships){
-        //    this._JSONShips = ships;
-        //});
-        //console.log(JSONShips);
         this.dock = new Dock(this._cellWidth, this._cellHeight, this._canvasShips, this._application);
     }
 }
@@ -370,22 +368,27 @@ var Dock = function(cellWidth, cellHeight, canvas, application){
 
     this.initShips();
 
-    var self = this;
 }
 
 Dock.prototype = {
     initShips: function(){
-        this._ships = [];
+        this._ships = {};
 
         this.buildShips();
     },
 
     buildShips: function(){
-        this._application.getAPI().getShips(self);
+
+        var self = this;
+        this._application.getAPI().getShips(self, function(ships){
+           self._ships = ships;
+        });
+
+        console.log(self._ships);
     },
 
     drawShips: function(){
-
+        console.log(this._ships);
     }
 }
 
@@ -393,11 +396,7 @@ Dock.prototype = {
  * -------------------------------------- SHIP -----------------------------------------
  * -------------------------------------------------------------------------------------**/
 var Ship = function(){
-    /* TODO:  Ship heeft een name
-     - Length
-     - isVertical
-     - startCell { x:bla, y:bla}
-     */
+
     this._id;
     this.length;
     this.name;
