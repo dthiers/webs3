@@ -106,12 +106,15 @@ var Application = function(){
     this._currentShip = null;
     this._currentDropShip = null;
 
+    this._fromXPos;
+    this._fromYPos;
+
     this._yPosTemp = 0;
 
     this.api;
     this.game;
 
-    this.init();
+    //this.init();
 }
 
 Application.prototype = {
@@ -126,10 +129,6 @@ Application.prototype = {
     setShipsNull: function(){
         this._currentShip = null;
         this._currentDropShip = null;
-    },
-
-    getShipById: function(id){
-
     },
 
     update: function(){
@@ -167,6 +166,10 @@ var Game = function(application){
 
     this._app = application;
 
+    this._hoverCanvas;
+    this._to;
+    this._from;
+
     this.init();
 }
 
@@ -190,18 +193,22 @@ Game.prototype = {
         $('.c').mousedown(function(){
 
             _mouse.pressed = true;
-            console.log(_mouse.pressed + ' - ' + self._hoverCanvas);
+            self._from = this.id;
+            //console.log(_mouse.pressed + ' - ' + self._hoverCanvas);
 
         }).mouseup(function(){
 
             _mouse.pressed = false;
-            console.log(_mouse.pressed + ' - ' + self._hoverCanvas);
+            self._to = self._hoverCanvas;
+            //console.log(_mouse.pressed + ' - ' + self._hoverCanvas);
 
-            if(self._hoverCanvas === 'canvas'){
+            if(self._to === 'canvas'){
                 var cellForShip = self.board.getCellUnderMouse();
                 console.log(cellForShip);
                 self.board.ifShipWithinBoundaries(cellForShip);
             }
+
+            self.dock.updateShips();
 
         });
 
@@ -252,9 +259,22 @@ var Board = function(cellWidth, cellHeight, canvas, application){
     $(this._canvas).on('dblclick', function(){
         var temp = self.getCellUnderMouse();
         self._app._currentShip = self.getShipOnCell(temp);
-    })
-    $(this._canvas).on('click', function(){
-       console.log(self.getCellUnderMouse());
+
+        self.setReverseShipDirection(self._app._currentShip);
+    });
+    $(this._canvas).mousedown(function(){
+
+        var _currentShip = self.getShipOnCell(self.getCellUnderMouse());
+        if(_currentShip !== undefined && _currentShip !== null){
+            self._app._fromXPos = _currentShip.xPos;
+            self._app._fromYPos = _currentShip.yPos;
+
+            self._app._yPosTemp = _currentShip.yPos;
+
+            self._app._currentShip = _currentShip;
+        }
+    }).mouseup(function(){
+        $('ships').trigger('mouseup');
     });
 
 }
@@ -293,8 +313,9 @@ Board.prototype = {
     drawGrid: function(){
         this._context.save();
         for(var i = 0; i < AMOUNT_TILES; i++){
-            this._context.strokeStyle = 'pink';
-            this._context.globalAlpha = 0.4;
+            this._context.strokeStyle = 'white';
+            this._context.globalAlpha = 0.1;
+            this._context.lineWidth = 1;
             this._context.beginPath();
             this._context.moveTo((i * this._cellWidth), 0);
             this._context.lineTo((i * this._cellWidth), CANVASHEIGHT);
@@ -362,7 +383,7 @@ Board.prototype = {
                 // TODO: als de aangeklikte cell hetzelfde is een cell in taken, dan wil ik het ship id hebben
                 if(cell.x === clickedCell.x && cell.y === clickedCell.y){
                     // TODO: ID opvragen van die ship.
-                    return this._app.getShipById(cell.shipId);
+                    return this._app.game.dock.getShipById(cell.shipId);
                 }
             }
         }
@@ -385,6 +406,7 @@ Board.prototype = {
             else{
                 _currentShip.xPos = this._app._fromXPos;
                 _currentShip.yPos = this._app._fromYPos;
+                this._app._currentShip = _currentShip;
             }
         }
         this.updateBoard();
@@ -397,17 +419,16 @@ Board.prototype = {
             ship.xPos = cell.xPos;
             ship.yPos = cell.yPos;
 
-            this.calculateTakenCells();
             this.updateBoard();
-            this._app.setShipsNull();
         }
     },
 
     moveAllowed: function(ship){
+        console.log(ship.id);
         var moveToCells = []; // De moveToCells ziet er hier uit als het ship op een andere locatie
         var cell;
         var toCell; // voor de laatste loop
-        var mouseCell = getCellUnderMouse(); // vanaf hier gaan kijken of dat het ship geplaatst kan worden
+        var mouseCell = this.getCellUnderMouse(); // vanaf hier gaan kijken of dat het ship geplaatst kan worden
         var startX = mouseCell.x;
         var startY = mouseCell.y;
 
@@ -416,7 +437,7 @@ Board.prototype = {
         for(var x = 0; x < ship.length; x++){
             cell = {};
             if(ship.isVertical === false){
-                cell.x = BOARD[parseInt(getKeyForValueOfX(startX) + x)];
+                cell.x = BOARD[parseInt(this._app.getKeyForValueOfX(startX) + x)];
                 cell.y = startY;
             }
             else{
@@ -431,7 +452,7 @@ Board.prototype = {
         for(var c = 0; c < moveToCells.length; c++) {
             for (var i = 0; i < this._takenCells.length; i++) {
                 toCell = moveToCells[c];
-                cell = _takenCells[i];
+                cell = this._takenCells[i];
                 //console.log('X: ' + toCell.x + '-' + cell.x + ' Y: ' + toCell.y + ' - ' + cell.y);
                 // als die buiten het bereik van BOARD komt of hoger dan Y is
                 if(((    toCell.x === cell.x && toCell.y === cell.y) ||
@@ -443,6 +464,61 @@ Board.prototype = {
             }
         }
         return allowed;
+    },
+
+    turnAllowed: function(ship){
+        var moveToCells = [];
+        var cell;
+        var toCell;
+        var startX = ship.startCell.x;
+        var startY = ship.startCell.y;
+
+        var allowed = true;
+
+        // TODO: verticaal -> horizontale vakjes uitrekenen
+        for(var x = 0; x < ship.length; x++){
+            cell = {};
+            if(ship.isVertical){
+                cell.x = BOARD[parseInt(this._app.getKeyForValueOfX(startX) + x)];
+                cell.y = startY;
+            }
+            else{
+                cell.x = startX;
+                cell.y = parseInt(startY + x);
+            }
+            moveToCells.push(cell);
+        }
+        // TODO: foreach cell kijken of deze in _takenCells zit BEHALVE DE EERSTE IN MOVETOCELLS
+        for(var c = 1; c < moveToCells.length; c++) {
+            for (var i = 0; i < this._takenCells.length; i++) {
+                toCell = moveToCells[c];
+                cell = this._takenCells[i];
+                //console.log('X: ' + toCell.x + '-' + cell.x + ' Y: ' + toCell.y + ' - ' + cell.y);
+                // als die buiten het bereik van BOARD komt of hoger dan Y is
+                if((    toCell.x === cell.x && toCell.y === cell.y) ||
+                    ((  toCell.x == undefined || toCell.x === null) ||
+                    toCell.y > AMOUNT_TILES)){
+                    allowed = false;
+                    break;
+                }
+            }
+        }
+        return allowed;
+    },
+
+    setReverseShipDirection: function(ship){
+        if(ship !== undefined && ship !== null){
+            // TODO: turnAllowed
+            if(this.turnAllowed(ship)) {
+                if (ship.isVertical == true) {
+                    ship.isVertical = false;
+                }
+                else {
+                    ship.isVertical = true;
+                }
+            }
+        }
+        this.updateBoard();
     },
 
     drawShipsWithBoardCoordinates: function(){
@@ -462,12 +538,13 @@ Board.prototype = {
                 ship.yPos = cell.yPos;
                 this._context.save();
                 // TODO: if vertical
-                this._context.fillStyle = ship.color;
+                this._context.strokeStyle = ship.color;
+                this._context.lineWidth = 3;
                 if(ship.isVertical){
-                    this._context.fillRect(ship.xPos, ship.yPos, this._cellWidth, (ship.length * this._cellHeight));
+                    this._context.strokeRect(ship.xPos, ship.yPos, this._cellWidth, (ship.length * this._cellHeight));
                 }
                 else{
-                    this._context.fillRect(ship.xPos, ship.yPos, (ship.length * this._cellWidth), this._cellHeight);
+                    this._context.strokeRect(ship.xPos, ship.yPos, (ship.length * this._cellWidth), this._cellHeight);
                 }
                 this._context.restore();
             }
@@ -530,14 +607,14 @@ Board.prototype = {
                 }
             }
         }
-        console.log(this._takenCells);
+        //console.log(this._takenCells);
     },
 
     updateBoard: function(){
         this._context.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT);
         this.drawGrid();
 
-        //this.calculateTakenCells();
+        this.calculateTakenCells();
 
         this.drawShipsWithBoardCoordinates();
         if(_mouse.pressed){
@@ -559,6 +636,8 @@ var Cell = function(){
     this.y;
     this.xPos;
     this.yPos;
+
+    this.shipId;
 
 }
 
@@ -591,9 +670,6 @@ var Dock = function(cellWidth, cellHeight, canvas, application){
     var self = this;
 
 
-    this._fromXPos;
-    this._fromYPos;
-
     $(this._canvas).mousemove(function(e){
         _mouse.updateMouse(e);
         self.updateShips();
@@ -602,8 +678,8 @@ var Dock = function(cellWidth, cellHeight, canvas, application){
 
         self._app._currentShip = self.getShipUnderMouse();
         if(self._app._currentShip !== undefined && self._app._currentShip !== null){
-            self._fromXPos = self._app._currentShip.xPos;
-            self._fromYPos = self._app._currentShip.yPos;
+            self._app._fromXPos = self._app._currentShip.xPos;
+            self._app._fromYPos = self._app._currentShip.yPos;
 
             self._app._yPosTemp = self._app._currentShip.yPos;
         }

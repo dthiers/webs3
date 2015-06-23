@@ -1,14 +1,87 @@
+<!--<!DOCTYPE html>-->
+<!--<html>-->
+  <!--<head>-->
+    <!--<title>Zeeslag</title>-->
+    <!--<link rel="stylesheet" type="text/css" href="style.css">-->
+    <!--<script src="http://localhost:8888/jquery-1.11.3.min.js"></script>-->
+    <!--<script src="script.js" defer></script>-->
+<!--</head>-->
+
+  <!--<body>-->
+      <!--<canvas class="c" id="canvas"></canvas>-->
+      <!--<canvas class="c" id="ships"></canvas>-->
+  <!--</body>-->
+<!--</html>-->
+
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Zeeslag</title>
+<head>
+    <title>Probeersel</title>
     <link rel="stylesheet" type="text/css" href="style.css">
     <script src="http://localhost:8888/jquery-1.11.3.min.js"></script>
+    <script src="scriptDOM.js" defer></script>
     <script src="script.js" defer></script>
 </head>
 
-  <body>
-      <canvas class="c" id="canvas"></canvas>
-      <canvas class="c" id="ships"></canvas>
-  </body>
+<body>
+
+
+<!-- Hidden menu, visible on hover of menuToggle -->
+<div id="menu">
+    <div id="menuItems">
+        <div class="item" name="newGame"><!-- newGame item -->
+            <div class="title">New Game</div>
+            <div class="title_text">
+                Create a new game
+            </div>
+            <div class="clearer"></div>
+
+        </div>
+        <div class="item" name="currentGames"><!-- currentGame item -->
+            <div class="title">Current Games</div>
+            <div class="title_text">
+                Shows a list of al the current games
+            </div>
+        </div>
+
+        <div class="item" name="emptyItem"><!-- emptyItem, kan nog ingevuld worden -->
+            <div class="title">Empty</div>
+            <div class="title_text">
+                This is an empty menu item
+            </div>
+        </div>
+    </div>
+
+    <div id="menuToggle">
+        <span id="menuText">MENU</span>
+    </div>
+</div>
+
+<!-- Inhoud van de pagina -->
+<div id="page">
+    <!-- Met JS hier het element dat je nodig hebt inladen -->
+</div>
+
+<!-- Gameboard -->
+<!--<div class="result">-->
+    <!--hallo-->
+<!--</div>-->
+
+<!-- New Game -->
+<!-- Hier krijg je een lijst van boten en een leeg bord te zien -->
+<div class="content_container newGame" id="newGame">
+        <div class="container_header">BOARD</div>
+        <canvas class="c" id="canvas"></canvas>
+        <canvas class="c" id="ships"></canvas>
+</div>
+
+<!-- Current Games -->
+<!-- Hier krijg je een lijst van alle current games te zien -->
+<div class="content_container currentGames" id="currentGames">
+    <div class="currentGame">
+
+    </div>
+</div>
+
+</body>
 </html>
