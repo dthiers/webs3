@@ -23,7 +23,7 @@
     <script src="script.js" defer></script>
 </head>
 
-<body>
+<body onload="app.init();">
 
 
 <!-- Hidden menu, visible on hover of menuToggle -->
@@ -78,9 +78,13 @@
 <!-- Current Games -->
 <!-- Hier krijg je een lijst van alle current games te zien -->
 <div class="content_container currentGames" id="currentGames">
+    <div class="container_header">CURRENT GAMES</div>
     <div class="currentGame">
-
+            <div class="game_id"></div>
+            <div class="opponent"></div>
+            <div class="status"></div>
     </div>
+    <div class="clearer"></div>
 </div>
 
 </body>

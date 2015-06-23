@@ -193,7 +193,37 @@ body {
     margin: 0 auto;
     height: 75%;
 
+    padding-top: 10px;
+
     text-align: center;
+}
+
+.currentGame{
+    width: 90%;
+    height: 40px;
+    display: block;
+
+    margin: 0 auto;
+    margin-top: 20px;
+
+    text-align: center;
+    border: 2px solid white;
+}
+.currentGame:hover {
+    border: 2px solid red;
+}
+
+.currentGame .game_id,
+.currentGame .opponent,
+.currentGame .status {
+    width: 30%;
+    height: 100%;
+    display: inline-block;
+
+    line-height: 40px;
+
+    text-align: center;
+    //border: 1px solid lightpink;
 }
 
 /*---------------------*/

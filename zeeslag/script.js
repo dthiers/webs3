@@ -55,19 +55,37 @@ function getJSONElement(link, token){
 
 }
 
-var API = function(){
+var API = function(callBack){
     this.token = "?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.ImR0aGllcnNAc3R1ZGVudC5hdmFucy5ubCI.l4cG7iZ_OwxremQLf9JTe-d2t85DqS7UFFcDOIN2o4o";
 
     this.linkGames = "https://zeeslagavans.herokuapp.com/users/me/games";
     this.linkShips = "https://zeeslagavans.herokuapp.com/ships";
-    this.linkNewGame = "https://zeeslagavans.herokuapp.com/games/AI/";
-    this.linkGetGameIds = "https://zeeslagavans.herokuapp.com/games/:id/";
-
+    this.linkNewGameAI = "https://zeeslagavans.herokuapp.com/games/AI/";
+    this.linkGetGameIds = "https://zeeslagavans.herokuapp.com/games/";
+    callBack();
 }
 
 API.prototype = {
-    getGames: function(){
+    getGames: function(application, callBack){
+        var games = [];
+        var game;
 
+        $.ajax({
+            type: "GET",
+            url: this.linkGames+this.token,
+            dataType: "json",
+            success: function(data){
+                data.forEach(function(element, index, array){
+                    game = {};
+                    game.id = element._id;
+                    game.enemyId = element.enemyId;
+                    game.enemyName = element.enemyName;
+                    game.status = element.status;
+                    games.push(game);
+                });
+                callBack(games);
+            }
+        });
     },
 
     getShips: function(dock, callBack){
@@ -93,8 +111,37 @@ API.prototype = {
 
     },
 
-    getGameIds: function(){
+    getNewGameAI: function(){
+        $.ajax({
+            type: "GET",
+            url: this.linkNewGameAI+this.token,
+            dataType: "json",
+            success: function(data){
+                console.log(data);
+            }
+        })
+    },
 
+    getGameForId: function(id, callBack){
+        var game;
+
+        $.ajax({
+           type: "GET",
+            url: this.linkGetGameIds+id+"/"+this.token,
+            dataType: "json",
+            success: function(data){
+                game = data;
+                callBack(game);
+            }
+        });
+    },
+
+    deleteAllGames: function(){
+        $.ajax({
+            type: "DELETE",
+            url: this.linkGames+this.token,
+            dataType: "json"
+        });
     }
 }
 
@@ -114,6 +161,8 @@ var Application = function(){
     this.api;
     this.game;
 
+    this.games;
+
     //this.init();
 }
 
@@ -121,9 +170,9 @@ Application.prototype = {
     init: function(){
         _mouse = new Mouse(0, 0, false, this);
 
-        this.api = new API();
-        var self = this;
-        this.game = new Game(self);
+        this.api = new API(function(alertm){
+
+        });
     },
 
     setShipsNull: function(){
@@ -145,6 +194,60 @@ Application.prototype = {
                 }
             }
         }
+    },
+
+    getNewGame: function(){
+        this.api.getNewGameAI();
+        var self = this;
+        this.game = new Game(self);
+    },
+
+    getCurrentGames: function(){
+        var self = this;
+        this.api.getGames(self, function(games){
+            self.games = games;
+
+            //var currentGames = $('#currentGames').empty();
+
+            var currentGames = $('#currentGames').empty();
+
+            var currentGame = $('.currentGame');
+
+            var g;
+            var gameItem;
+            for(var i = 0; i < self.games.length; i++){
+                g = self.games[i];
+                console.log(g);
+                gameItem = currentGame.clone();
+                gameItem.id = g.id;
+                gameItem[0].children[0].innerHTML = g.id;
+                gameItem[0].children[1].innerHTML = g.enemyName;
+                gameItem[0].children[2].innerHTML = g.status;
+
+                currentGames.append(gameItem);
+            }
+
+            $('.currentGame').on('click', function(){
+                self.getGameForId(this.children[0].innerHTML);
+            });
+
+        });
+
+        // TODO: je krijgt hier games, die ga je inladen in currentGames
+
+
+    },
+
+    getGameForId: function(id){
+        var self = this;
+        this.api.getGameForId(id, function(game){
+           self.newGame = game;
+            console.log(self.newGame);
+        });
+    },
+
+    deleteCurrentGames: function(){
+        this.api.deleteAllGames();
     }
 }
 

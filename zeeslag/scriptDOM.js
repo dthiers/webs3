@@ -59,15 +59,18 @@ function loadMenuItemInPage(item){
   var page = $('#page');
   var toPage = $('#'+item.getAttribute('name')).clone();
 
-  console.log(toPage.html());
+  //console.log(toPage.html());
 
   toPage.css('display', 'block');
   page.html(toPage);
     if(item.getAttribute('name') === 'newGame'){
-        app.init();
+        app.getNewGame();
     }
-    else {
-        console.log(item.getAttribute('name'));
+    else if(item.getAttribute('name') === 'currentGames') {
+        app.getCurrentGames();
+    }
+    else if(item.getAttribute('name') === 'emptyItem') {
+        app.deleteCurrentGames();
     }
 
 }
