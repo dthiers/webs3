@@ -12,7 +12,6 @@ const AMOUNT_SHIPS = 5;
 const COLOR = { 0: 'red', 1: 'black', 2: 'yellow', 3: 'orange', 4: 'purple'};
 
 var _mouse;
-var _currentShip;
 //
 // // GAMES
 // $.get( "https://zeeslagavans.herokuapp.com/users/me/games"+token, function( data ) {
@@ -72,18 +71,22 @@ API.prototype = {
     },
 
     getShips: function(dock, callBack){
-        var ships = {};
+        var ships = [];
+        var ship;
 
         $.ajax({
             type: "GET",
             url: this.linkShips+this.token,
             dataType: "json",
             success: function(data){
-                ships = { "ships": data };
-                console.log(ships);
+                data.forEach(function(element, index, array){
+                    ship = new Ship();
+                    ship.convertToShip(element);
+                    ships.push(ship);
+                })
+                callBack(ships);
             }
         });
-        callBack(ships);
     },
 
     getNewGame: function(){
@@ -100,6 +103,11 @@ API.prototype = {
  * -------------------------------------------------------------------------------------**/
 var Application = function(){
 
+    this._currentShip = null;
+    this._currentDropShip = null;
+
+    this._yPosTemp = 0;
+
     this.api;
     this.game;
 
@@ -108,19 +116,20 @@ var Application = function(){
 
 Application.prototype = {
     init: function(){
-        _mouse = new Mouse(0, 0, false);
+        _mouse = new Mouse(0, 0, false, this);
 
         this.api = new API();
         var self = this;
         this.game = new Game(self);
     },
 
-    update: function(){
-
+    setShipsNull: function(){
+        this._currentShip = null;
+        this._currentDropShip = null;
     },
 
-    getAPI: function(){
-        return this.api;
+    update: function(){
+
     }
 }
 
@@ -132,21 +141,15 @@ Application.prototype = {
 var Game = function(application){
 
     this._canvas;
-
     this.board;
 
     this._canvasShips;
-
     this.dock;
-
-    this._cells;
-    this._takenCells;
 
     this._cellWidth;
     this._cellHeight;
 
-    this._application = application;
-    this._api = this._application.getAPI();
+    this._app = application;
 
     this.init();
 }
@@ -157,24 +160,39 @@ Game.prototype = {
         this._cellWidth = CANVASWIDTH / AMOUNT_TILES;
         this._cellHeight = CANVASHEIGHT / AMOUNT_TILES;
 
-        // CANVAS
         this._canvas = document.getElementById('canvas');
-        // SHIPS
         this._canvasShips = document.getElementById('ships');
 
+        this._hoverCanvas;
 
-        // TODO: objecten declareren
+        $('.c').mousemove(function(){
+            this._hoverCanvas = this.id;
+        });
+
+        $('.c').mousedown(function(){
+
+            _mouse.pressed = true;
+            console.log(_mouse.pressed + ' - ' + this._hoverCanvas);
+
+        }).mouseup(function(){
+
+            _mouse.pressed = false;
+            console.log(_mouse.pressed + ' - ' + this._hoverCanvas);
+
+        });
+
+
         this.initBoard();
         this.initDock();
 
 
     },
     initBoard: function(){
-        this.board = new Board(this._cellWidth, this._cellHeight, this._canvas, this._application);
+        this.board = new Board(this._cellWidth, this._cellHeight, this._canvas, this._app);
     },
 
     initDock: function(){
-        this.dock = new Dock(this._cellWidth, this._cellHeight, this._canvasShips, this._application);
+        this.dock = new Dock(this._cellWidth, this._cellHeight, this._canvasShips, this._app);
     }
 }
 
@@ -257,7 +275,7 @@ Board.prototype = {
 
         for(var i = 0; i < this._cells.length; i++){
             cell = this._cells[i];
-            if(cell.getX() == cx && cell.getY() == cy){
+            if(cell.x == cx && cell.y == cy){
                 return cell;
             }
         }
@@ -268,8 +286,8 @@ Board.prototype = {
 
         for(var i = 0; i < this._cells.length; i++){
             cell = this._cells[i];
-            if(_mouse.getX() < cell.getXPos() || _mouse.getX() > (cell.getXPos() + this._cellWidth)
-                || _mouse.getY() < cell.getYPos() || _mouse.getY() > (cell.getYPos() + this._cellHeight)) {
+            if(_mouse.x < cell.xPos || _mouse.x > (cell.xPos + this._cellWidth)
+                || _mouse.y < cell.yPos || _mouse.y > (cell.yPos + this._cellHeight)) {
                 // TODO: niks, want je bent niet de juiste
             }
             else {
@@ -283,8 +301,8 @@ Board.prototype = {
 
         for(var i = 0; i < this._cells.length; i++){
             cell = this._cells[i];
-            if( _mouse.getX() < cell.getXPos() || _mouse.getX() > (cell.getXPos() + this._cellWidth)
-                || _mouse.getY() < cell.getYPos() || _mouse.getY() > (cell.getYPos() + this._cellHeight)){
+            if( _mouse.x < cell.xPos || _mouse.x > (cell.xPos + this._cellWidth)
+                || _mouse.y < cell.yPos || _mouse.y > (cell.yPos + this._cellHeight)){
                 // TODO: niks, lul.
             }
             else{
@@ -292,7 +310,7 @@ Board.prototype = {
                 this._context.strokeStyle = 'black';
                 this._context.strokeWidth = '2px';
                 this._context.globalAlpha = 1;
-                this._context.strokeRect(cell.getXPos(), cell.getYPos(), this._cellWidth, this._cellHeight);
+                this._context.strokeRect(cell.xPos, cell.yPos, this._cellWidth, this._cellHeight);
                     this._context.restore();
             }
         }
@@ -355,16 +373,48 @@ var Dock = function(cellWidth, cellHeight, canvas, application){
 
     this._cellWidth = cellWidth;
     this._cellHeight = cellHeight;
+    this._shipHeight = cellHeight;
+
+    this._canvasWidth = this._cellWidth * AMOUNT_SHIPS;
+    this._canvasHeight = this._cellHeight * AMOUNT_SHIPS;
+
     this._canvas = canvas;
     this._context =this._canvas.getContext('2d');
 
-
-    this._canvas.width = this._cellWidth * 5;
-    this._canvas.height = this._cellHeight * AMOUNT_SHIPS;
+    this._canvas.width = this._canvasWidth;
+    this._canvas.height = this._canvasHeight;
 
     this._ships;
+    this._app = application;
 
-    this._application = application;
+    var self = this;
+
+
+    this._fromXPos;
+    this._fromYPos;
+
+    $(this._canvas).mousemove(function(e){
+        _mouse.updateMouse(e);
+        self.updateShips();
+    });
+    $(this._canvas).mousedown(function(){
+
+        self._app._currentShip = self.getShipUnderMouse();
+        if(self._app._currentShip !== undefined && self._app._currentShip !== null){
+            self._fromXPos = self._app._currentShip.xPos;
+            self._fromYPos = self._app._currentShip.yPos;
+
+            self._app._yPosTemp = self._app._currentShip.yPos;
+        }
+        console.log(self._app._currentShip);
+
+    }).mouseup(function(){
+
+        self.swapShips(self._app._currentShip, self._app._currentDropShip);
+
+        self._app.setShipsNull();
+
+    });
 
     this.initShips();
 
@@ -372,23 +422,136 @@ var Dock = function(cellWidth, cellHeight, canvas, application){
 
 Dock.prototype = {
     initShips: function(){
-        this._ships = {};
+        this._ships = [];
 
-        this.buildShips();
+        this.getShips();
+    },
+
+    getShips: function(){
+
+        var self = this;
+        this._app.api.getShips(self, function(ships){
+           self._ships = ships;
+            console.log('nu de functie');
+            self.buildShips();
+        });
     },
 
     buildShips: function(){
+        var ships = [];
+        var ship;
+        var xPos = 0;
+        var yPos = 0;
 
-        var self = this;
-        this._application.getAPI().getShips(self, function(ships){
-           self._ships = ships;
-        });
+        for (var i = 0; i < this._ships.length; i++){
+            ship = this._ships[i];
+            ship.xPos = xPos;
+            ship.yPos = yPos;
+            ship.color = COLOR[i];
 
-        console.log(self._ships);
+            ship.startCell = {x:null, y:null};
+            ship.isVertical = false;
+
+            yPos += this._shipHeight;
+
+            ships.push(ship);
+        }
+        this._ships = ships;
+        console.log(this._ships);
+        this.drawShips();
     },
 
     drawShips: function(){
         console.log(this._ships);
+        var ship;
+
+        this._context.clearRect(0, 0, this._canvasWidth, this._canvasHeight);
+        for(var i = 0; i < this._ships.length; i++){
+            ship = this._ships[i];
+            if(ship.startCell.x !== null || (ship === this._app._currentShip && _mouse.pressed)){
+                continue;
+            }
+            // TODO: als een ship op het board staat moet ie nu getekend worden
+            else{
+                this._context.fillStyle = ship.color;
+                this._context.fillRect(ship.xPos, ship.yPos, (this._cellWidth * ship.length), this._shipHeight);
+            }
+        }
+    },
+
+    drawDragShipDock: function(){
+        if(this._app._currentShip !== undefined && this._app._currentShip !== null){
+            this._context.save();
+            this._context.fillStyle = this._app._currentShip.color;
+            this._context.globalAlpha = 0.8;
+            this._context.fillRect(this._app._currentShip.xPos, this._app._currentShip.yPos, (this._app._currentShip.length * this._cellWidth), this._shipHeight);
+            this._context.restore();
+            this.snapShipToGrid(this._app._currentShip);
+        }
+    },
+
+    getShipUnderMouse: function(){
+        var ship;
+
+        for(var i = 0; i < this._ships.length; i++){
+            ship = this._ships[i];
+            if(ship != this._app._currentShip){
+                if(_mouse.x < ship.xPos || _mouse.x > (ship.length * this._cellWidth)
+                    || _mouse.y < ship.yPos || _mouse.y > (ship.yPos + this._shipHeight)) {
+                    // TODO: niks, want je bent niet de juiste
+                }
+                else {
+                    return ship;
+                }
+            }
+        }
+    },
+
+    getSwapShip: function(){
+        var ship;
+
+        for(var i = 0; i < this._ships.length; i++){
+            ship = this._ships[i];
+            if(ship != this._app._currentShip){
+                if(_mouse.x < ship.xPos || _mouse.x > this._shipWidth
+                    || _mouse.y < ship.yPos || _mouse.y > (ship.yPos + this._shipHeight)) {
+                    // TODO: niks, want je bent niet de juiste
+                }
+                else {
+                    return ship;
+                }
+            }
+        }
+    },
+
+    swapShips: function(shipDrag, shipDrop){
+        if(shipDrag !== null && shipDrop !== null && shipDrag != undefined && shipDrop != undefined){
+            shipDrag.yPos = shipDrop.yPos;
+            shipDrop.yPos = this._app._yPosTemp;
+        }
+    },
+
+    snapShipToGrid: function(ship){
+        if(_mouse.y < this._shipHeight){
+            // TODO y = 0 0-100
+            ship.xPos = 0;
+            ship.yPos = 0;
+        }
+        for(var i = 1; i < this._ships.length; i++){
+            ship.xPos = 0;
+            if(_mouse.y > (this._shipHeight * i) && _mouse.y < (this._shipHeight * (i+1))){
+                ship.yPos = (i * this._shipHeight);
+            }
+        }
+    },
+
+    updateShips: function(){
+        this._context.clearRect(0, 0, this._canvasWidth, this._canvasHeight);
+        this.drawShips();
+        if(_mouse.pressed){
+            this._app._currentDropShip = this.getSwapShip();
+            this.drawDragShipDock();
+        }
     }
 }
 
@@ -397,22 +560,27 @@ Dock.prototype = {
  * -------------------------------------------------------------------------------------**/
 var Ship = function(){
 
-    this._id;
+    this.id;
     this.length;
     this.name;
     this.startCell;
+
+    this.xPos;
+    this.yPos;
+    this.color;
 }
 
 Ship.prototype = {
 
-    convertToShip: function(object){
-        this._id = object._id;
-        this.length = object.length;
-        this.name = object.name;
-        if(object.startCell){
-            this.startCell.x = object.startCell.x;
-            this.startCell.y = object.startCell.y;
+    convertToShip: function(element){
+        this.id = element._id;
+        this.length = element.length;
+        this.name = element.name;
+        if(element.startCell){
+            this.startCell.x = element.startCell.x;
+            this.startCell.y = element.startCell.y;
         }
+        console.log(this);
     }
 }
 
@@ -420,46 +588,36 @@ Ship.prototype = {
 /**-------------------------------------------------------------------------------------
  * -------------------------------------- MOUSE -----------------------------------------
  * -------------------------------------------------------------------------------------**/
-var Mouse = function(x, y, pressed){
+var Mouse = function(x, y, pressed, application){
     this.x = x;
     this.y = y;
     this.pressed = pressed;
+
+    this._app = application;
 }
 
 Mouse.prototype = {
     updateMouse: function(e){
         if(e.layerX || e.layerX ==0){
-            _mouse.setX(e.layerX);
-            _mouse.setY(e.layerY);
+            _mouse.x = (e.layerX);
+            _mouse.y = (e.layerY);
         }
         else if(e.offsetX || e.offsetX == 0){
-            _mouse.setX(e.offsetX);
-            _mouse.setY(e.offsetY);
+            _mouse.x = (e.offsetX);
+            _mouse.y = (e.offsetY);
         }
-        //if(_currentShip != null && _mouse.pressed){
-        //    // TODO: binnen het ship canvas wil je niet dat de
-        //    // TODO: een ander x coordinate krijgen
-        //    //_currentShip.xPos = _mouse.x - ((_currentShip.length * _cellWidth) / 2);
-        //    _currentShip.xPos = _mouse.x - (_cellWidth / 2);
-        //    _currentShip.yPos = _mouse.y - (_shipHeight / 2);
-        //
-        //    // TODO: van ene canvas naar andere transferen?
-        //}
+        if(this._app._currentShip != null && _mouse.pressed){
+            // TODO: binnen het ship canvas wil je niet dat de
+            // TODO: een ander x coordinate krijgen
+            //_currentShip.xPos = _mouse.x - ((_currentShip.length * _cellWidth) / 2);
+            this._app._currentShip.xPos = _mouse.x - (50 / 2);
+            this._app._currentShip.yPos = _mouse.y - (50 / 2);
+
+            // TODO: van ene canvas naar andere transferen?
+        }
     },
-    log: function(){
+    log: function() {
         console.log(this.x + ' - ' + this.y);
-    },
-    getX: function(){
-        return this.x;
-    },
-    getY: function(){
-        return this.y;
-    },
-    setX: function(val){
-        this.x = val;
-    },
-    setY: function(val){
-        this.y = val;
     }
 }
 
