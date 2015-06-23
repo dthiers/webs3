@@ -645,7 +645,7 @@ function drawShipsOnCanvas(){
         if(ship.startCell.x !== null || (ship === _currentShip && _mouse.pressed)){
             continue;
         }
-        // TODO: als een ship op het board staat moet ie nu getekend worden
+        // TODO: als een ship op het board staat moet ie niet getekend worden
         else{
             _contextShips.fillStyle = ship.color;
             _contextShips.fillRect(ship.xPos, ship.yPos, (_cellWidth * ship.length), _shipHeight);
