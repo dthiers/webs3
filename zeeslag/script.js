@@ -1,7 +1,7 @@
 
 
 const AMOUNT_TILES = 10;
-const BOARD = { 1: 'a', 2: 'b', 3: 'c', 4: 'd', 5: 'e', 6: 'f', 7: 'g', 8: 'h', 9: 'i', 10: 'l'};
+const BOARD = { 1: 'a', 2: 'b', 3: 'c', 4: 'd', 5: 'e', 6: 'f', 7: 'g', 8: 'h', 9: 'i', 10: 'j'};
 
 // BOARD
 const CANVASWIDTH = 500;
@@ -19,7 +19,6 @@ function getJSONElement(link, token){
     // return data;
     console.log(data);
   });
-
 }
 
 var API = function(){
@@ -110,6 +109,7 @@ API.prototype = {
             dataType: "json",
             success: function(data){
                 game = data;
+                console.log(game);
                 callBack(game);
             }
         });
@@ -124,6 +124,12 @@ API.prototype = {
             success: function(data){
                 console.log(data);
             }
+        });
+    },
+
+    postShot: function(id, cell){
+        $.post(this.linkGetGameIds+id+"/shots"+this.token, { "x": cell.x, "y": cell.y}, function(data){
+            console.log(data);
         });
     },
 
@@ -150,6 +156,7 @@ var Application = function(){
     this._yPosTemp = 0;
 
     this.api;
+
     this.game;
     this.newGame;
 
@@ -189,7 +196,8 @@ Application.prototype = {
     getNewGame: function(){
         var self = this;
         this.api.getNewGameAI(function(game){
-            self.game = new Game(self, game._id);
+            self.game = new Game(self);
+            self.game.loadGame(game._id, game);
         });
     },
 
@@ -198,21 +206,13 @@ Application.prototype = {
         this.api.getGames(self, function(games){
             self.games = games;
 
-
             var currentGames = $('#currentGames').empty();
 
-            //var currentGame = $('.currentGame');
-
             var g;
-            //var gameItem;
             for(var i = 0; i < self.games.length; i++){
                 g = self.games[i];
                 console.log(g);
-                //gameItem = currentGame.clone();
-                //gameItem.id = g.id;
-                //gameItem[0].children[0].innerHTML = g.id;
-                //gameItem[0].children[1].innerHTML = g.enemyName;
-                //gameItem[0].children[2].innerHTML = g.status;
+
                 var cGame = document.createElement("div");
                 cGame.className = "currentGame";
 
@@ -242,25 +242,18 @@ Application.prototype = {
                     var toPage = $('#newGame').clone();
                     toPage.css('display', 'block');
                     $('#page').html(toPage);
-                })
+                });
             }
-            //
-            //$('.currentGame').on('click', function(){
-            //    self.getGameForId(this.children[0].innerHTML);
-            //});
-
         });
-
-        // TODO: je krijgt hier games, die ga je inladen in currentGames
-
-
     },
 
     getGameForId: function(id){
         var self = this;
         this.api.getGameForId(id, function(game){
-            self.newGame = new Game(self, game._id);
-            self.newGame.loadGame(game);
+            //self.newGame = new Game(self, game._id);
+            //self.newGame.loadGame(game);
+            self.game = new Game(self);
+            self.game.loadGame(id, game);
         });
     },
 
@@ -274,8 +267,8 @@ Application.prototype = {
  * -------------------------------------- GAME -----------------------------------------
  * -------------------------------------------------------------------------------------**/
 
-var Game = function(application, id){
-
+var Game = function(application){
+    console.log(this);
     this._canvas;
     this.board;
 
@@ -286,13 +279,12 @@ var Game = function(application, id){
     this._cellHeight;
 
     this._app = application;
-    this.id = id;
+    this.id;
+    this.status;
 
     this._hoverCanvas;
     this._to;
     this._from;
-
-
 
     this.init();
 }
@@ -326,7 +318,6 @@ Game.prototype = {
 
             if(self._to === 'canvas'){
                 var cellForShip = self.board.getCellUnderMouse();
-                console.log(cellForShip);
                 self.board.ifShipWithinBoundaries(cellForShip);
             }
 
@@ -341,8 +332,9 @@ Game.prototype = {
 
 
     },
+
     initBoard: function(){
-        this.board = new Board(this._cellWidth, this._cellHeight, this._canvas, this._app);
+        this.board = new Board(this._cellWidth, this._cellHeight, this._canvas, this._app, this);
     },
 
     initDock: function(){
@@ -365,31 +357,60 @@ Game.prototype = {
         this._app.api.postBoard(this.id, this.dock.createJSONSHips());
     },
 
-    loadGame: function(game){
+    loadGame: function(id, jsonGame){
         // TODO: game inladen
         /*
         *   - STATUS
         *   - Board.LoadShots(game.shots)
         *   - Board.placeShot
         * */
-        console.log(game);
-        if(game.yourTurn === true){
+        console.log('hier bij loadGame');
+        console.log(jsonGame);
+
+        var self = this;
+        this.id = id;
+
+        this.status = jsonGame.status;
+        // TODO: status started
+        if(this.status !== 'setup'){
+            $('#ships').css('display', 'none');
+            $('#newGame .container_footer').html('');
+        }
+        if(jsonGame.yourTurn === true){
             // TODO: plaats een shot op ENEMYBOARD
             // TODO: enemy board laden in de canvas
-            this.board.loadEnemyBoard(game.enemyGameboard);
+            this.board.loadEnemyBoard(jsonGame.enemyGameboard, function(message){
+                //alert(message);
+            });
+
         }
-        else if(game.yourTurn === false){
+        else if(jsonGame.yourTurn === false){
             // TODO: Teken de geplaatste schoten
+            //alert('je bent niet aan de beurt');
         }
 
-     }
+     },
+
+    postShot: function(id, cell){
+        var self;
+        console.log('in game');
+        this._app.api.postShot(this.id, { "x": cell.x, "y": cell.y});
+    },
+
+    updateShots: function(id){
+        var self = this;
+       this._app.api.getGameForId(id, function(game){
+            self.board.shotsOnEnemy = game.enemyGameboard.shots;
+           self.board.updateEnemyBoard();
+        });
+    }
 
 }
 
 /**-------------------------------------------------------------------------------------
  * -------------------------------------- BOARD -----------------------------------------
  * -------------------------------------------------------------------------------------**/
-var Board = function(cellWidth, cellHeight, canvas, application){
+var Board = function(cellWidth, cellHeight, canvas, application, game){
 
     this._cellWidth = cellWidth;
     this._cellHeight = cellHeight;
@@ -403,39 +424,52 @@ var Board = function(cellWidth, cellHeight, canvas, application){
     this._takenCells;
 
     this._app = application;
+    this.game = game;
+
+    this.shotsOnEnemy;
 
     this.initBoard();
 
+    console.log(this._app);
+    console.log(this._app.game);
+
     var self = this;
-    $(this._canvas).mousemove(function(e){
-        _mouse.updateMouse(e);
-        self.updateBoard();
-    });
-    $(this._canvas).on('dblclick', function(){
-        var temp = self.getCellUnderMouse();
-        self._app._currentShip = self.getShipOnCell(temp);
 
-        self.setReverseShipDirection(self._app._currentShip);
-    });
-    $(this._canvas).mousedown(function(){
 
-        var _currentShip = self.getShipOnCell(self.getCellUnderMouse());
-        if(_currentShip !== undefined && _currentShip !== null){
-            self._app._fromXPos = _currentShip.xPos;
-            self._app._fromYPos = _currentShip.yPos;
 
-            self._app._yPosTemp = _currentShip.yPos;
+        $(this._canvas).mousemove(function(e){
+            _mouse.updateMouse(e);
+            self.updateBoard();
+            if(self.game.status !== 'setup'){
+                self.updateEnemyBoard();
+            }
+        });
+        $(this._canvas).on('dblclick', function(){
+            var temp = self.getCellUnderMouse();
+            self._app._currentShip = self.getShipOnCell(temp);
 
-            self._app._currentShip = _currentShip;
-        }
-    }).mouseup(function(){
-        $('ships').trigger('mouseup');
-    });
+            self.setReverseShipDirection(self._app._currentShip);
+        });
+        $(this._canvas).mousedown(function(){
+
+            var _currentShip = self.getShipOnCell(self.getCellUnderMouse());
+            if(_currentShip !== undefined && _currentShip !== null){
+                self._app._fromXPos = _currentShip.xPos;
+                self._app._fromYPos = _currentShip.yPos;
+
+                self._app._yPosTemp = _currentShip.yPos;
+
+                self._app._currentShip = _currentShip;
+            }
+        }).mouseup(function(){
+            $('ships').trigger('mouseup');
+        });
+
 
     // Shot plaatsen
     $(this._canvas).on('click', function(){
-       var cell = self.getCellUnderMouse();
-        //alert(cell.x + ' - ' + cell.y);
+        var cell = self.getCellUnderMouse();
+        self.placeShotOnBoard(cell);
     });
 
 }
@@ -775,7 +809,9 @@ Board.prototype = {
         this._context.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT);
         this.drawGrid();
 
-        this.calculateTakenCells();
+        if(this._app.game.status === 'setup'){
+            this.calculateTakenCells();
+        }
 
         this.drawShipsWithBoardCoordinates();
         if(_mouse.pressed){
@@ -786,42 +822,56 @@ Board.prototype = {
         }
     },
 
-    loadEnemyBoard: function(board){
+    loadEnemyBoard: function(board, callBack){
         // TODO: EnemyGameboard heeft alleen een lijst van shots
-        this.updateEnemyBoard();
-        var shots = board.shots;
-        var shot;
-        for(var i = 0; i < shots.length; i++){
-            shot = shots[i];
-            this.drawEnemyShotsOnBoard(shot);
-        }
+        //this.updateEnemyBoard();
+        //this._app.game.dock = null;
+        this.shotsOnEnemy = board.shots;
+        console.log(this.shotsOnEnemy);
+
+        this.drawEnemyShotsOnBoard();
     },
 
-    drawEnemyShotsOnBoard: function(shot){
-        var cell = getCellForCoordinates(shot.x, shot.y);
+    drawEnemyShotsOnBoard: function(){
+        var shot;
+        for(var i = 0; i < this.shotsOnEnemy.length; i++) {
+            shot = this.shotsOnEnemy[i];
+
+            var cell = this.getCellForCoordinates(shot.x, shot.y);
 
             this._context.save();
-        this._context.globalAlpha = 0.6;
-        if(shot.isHit){
-            this._context.fillStyle= "red";
-        }
-        else{
-            this._context.fillStyle = "white";
-        }
-        this._context.fillRect(cell.xPos, cell.yPos, this._cellWidth, this._cellHeight);
+            this._context.globalAlpha = 0.6;
+            if (shot.isHit) {
+                this._context.fillStyle = "red";
+            }
+            else {
+                this._context.fillStyle = "white";
+            }
+            this._context.fillRect(cell.xPos, cell.yPos, this._cellWidth, this._cellHeight);
             this._context.restore();
-
-        this.updateEnemyBoard();
+        }
     },
 
-    placeShotOnBoard: function(game){
-        //this.getCellForCoordinates(x, y); a, 1 <-- dan kan je xPos en yPos opvragen om te tekenen
+    // TODO: dit werkend maken
+    placeShotOnBoard: function(cell){
+        if(this.game !== undefined && this.game !== null){
+            if(this.game.status !== 'setup'){
+
+                console.log('shot at' + cell.x + ' - ' + cell.y);
+                console.log(this.game);
+                this.game.postShot(this.game.id, cell);
+                this.game.updateShots(this.game.id);
+            }
+        }
+
     },
 
     updateEnemyBoard: function(){
         this._context.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT);
 
         this.drawGrid();
+
+        this.drawEnemyShotsOnBoard();
     }
 }
 
