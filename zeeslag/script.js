@@ -24,12 +24,12 @@ function getJSONElement(link, token){
 var API = function(){
     this.token = "?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.ImR0aGllcnNAc3R1ZGVudC5hdmFucy5ubCI.l4cG7iZ_OwxremQLf9JTe-d2t85DqS7UFFcDOIN2o4o";
 
-    this.linkGames = "https://zeeslagavans2.herokuapp.com/users/me/games";
-    this.linkShips = "https://zeeslagavans2.herokuapp.com/ships";
-    this.linkNewGame = "https://zeeslagavans2.herokuapp.com/games/";
-    this.linkNewGameAI = "https://zeeslagavans2.herokuapp.com/games/AI/";
-    this.linkGetGameIds = "https://zeeslagavans2.herokuapp.com/games/";
-    this.linkPostBoard = "https://zeeslagavans2.herokuapp.com/games/"; //games/:id/gameboards
+    this.linkGames = "https://zeeslagavans3.herokuapp.com/users/me/games";
+    this.linkShips = "https://zeeslagavans3.herokuapp.com/ships";
+    this.linkNewGame = "https://zeeslagavans3.herokuapp.com/games/";
+    this.linkNewGameAI = "https://zeeslagavans3.herokuapp.com/games/AI/";
+    this.linkGetGameIds = "https://zeeslagavans3.herokuapp.com/games/";
+    this.linkPostBoard = "https://zeeslagavans3.herokuapp.com/games/"; //games/:id/gameboards
 }
 
 API.prototype = {
@@ -122,7 +122,8 @@ API.prototype = {
             dataType: "json",
             data: board,
             success: function(data){
-                console.log(data);
+                //console.log(data);
+                callBack(data);
             }
         });
     },
@@ -321,7 +322,7 @@ Game.prototype = {
                 self.board.ifShipWithinBoundaries(cellForShip);
             }
 
-            self.dock.updateShips();
+            //self.dock.updateShips();
 
         });
 
@@ -353,28 +354,41 @@ Game.prototype = {
     },
 
     postBoard: function(){
-        // TODO: check of alle schepen in dit Dock een startCell hebben.
-        this._app.api.postBoard(this.id, this.dock.createJSONSHips());
+        var self = this;
+        this._app.api.postBoard(this.id, this.dock.createJSONSHips(), function(data){
+
+            console.log(data);
+
+            // TODO: callBack afvangen en naar de game gaan.
+            self._app.api.getGameForId(self.id, function(game){
+                console.log(self.id);
+                console.log(game);
+                self.loadGame(self.id, game);
+            });
+        });
     },
 
     loadGame: function(id, jsonGame){
-        // TODO: game inladen
-        /*
-        *   - STATUS
-        *   - Board.LoadShots(game.shots)
-        *   - Board.placeShot
-        * */
-        console.log('hier bij loadGame');
-        console.log(jsonGame);
-
         var self = this;
         this.id = id;
 
         this.status = jsonGame.status;
+
         // TODO: status started
         if(this.status !== 'setup'){
+
             $('#ships').css('display', 'none');
-            $('#newGame .container_footer').html('');
+            $('#newGame .container_footer').css('visibility', 'hidden');
+
+            self.board.loadEnemyBoard(jsonGame.enemyGameboard, function(message){
+                self.board.updateEnemyBoard();
+            });
+            self.dock._ships = null;
+            self.board.updateEnemyBoard();
+        }
+        else {
+            $('#ships').css('display', 'inline-block');
+            $('#newGame .container_footer').css('visibility', 'visible');
         }
         if(jsonGame.yourTurn === true){
             // TODO: plaats een shot op ENEMYBOARD
@@ -436,7 +450,6 @@ var Board = function(cellWidth, cellHeight, canvas, application, game){
     var self = this;
 
 
-
         $(this._canvas).mousemove(function(e){
             _mouse.updateMouse(e);
             self.updateBoard();
@@ -451,9 +464,8 @@ var Board = function(cellWidth, cellHeight, canvas, application, game){
             self.setReverseShipDirection(self._app._currentShip);
         });
         $(this._canvas).mousedown(function(){
-
             var _currentShip = self.getShipOnCell(self.getCellUnderMouse());
-            if(_currentShip !== undefined && _currentShip !== null){
+            if (_currentShip !== undefined && _currentShip !== null) {
                 self._app._fromXPos = _currentShip.xPos;
                 self._app._fromYPos = _currentShip.yPos;
 
@@ -806,19 +818,21 @@ Board.prototype = {
     },
 
     updateBoard: function(){
-        this._context.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT);
-        this.drawGrid();
+        if(this.game.status === 'setup'){
+            this._context.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT);
+            this.drawGrid();
 
-        if(this._app.game.status === 'setup'){
-            this.calculateTakenCells();
-        }
+            if(this._app.game.status === 'setup'){
+                this.calculateTakenCells();
+            }
 
-        this.drawShipsWithBoardCoordinates();
-        if(_mouse.pressed){
-            this.drawDragShipBoard();
-        }
-        else{
-            this.hoverCursor();
+            this.drawShipsWithBoardCoordinates();
+            if(_mouse.pressed){
+                this.drawDragShipBoard();
+            }
+            else{
+                this.hoverCursor();
+            }
         }
     },
 
@@ -872,6 +886,8 @@ Board.prototype = {
         this.drawGrid();
 
         this.drawEnemyShotsOnBoard();
+
+        this.hoverCursor();
     }
 }
 
