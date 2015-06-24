@@ -12,40 +12,7 @@ const AMOUNT_SHIPS = 5;
 const COLOR = { 0: 'red', 1: 'black', 2: 'yellow', 3: 'orange', 4: 'purple'};
 
 var _mouse;
-//
-// // GAMES
-// $.get( "https://zeeslagavans.herokuapp.com/users/me/games"+token, function( data ) {
-//   console.log(data);
-//
-//   $(".result").html(data);
-// });
-//
-//
-// // SHIPS
-// $.get( "https://zeeslagavans.herokuapp.com/ships"+token, function( data ) {
-//   console.log(data);
-//
-//   $(".result").html( data. );
-// });
-//
-//
-// // NEW GAME
-// $.get( "https://zeeslagavans.herokuapp.com/games/AI/"+token, function( data ) {
-//   console.log(data);
-//
-//   $('body').html( data );
-// });
-//
-//
-// // GET GAME ID's
-// $.get( "https://zeeslagavans.herokuapp.com/games/:id/"+token, function( data ) {
-//   console.log(data);
-//
-//   $('body').html( data );
-// });
 
-// SHIPS
-//getJSONElement(linkShips, token);
 
 function getJSONElement(link, token){
   $.get(link+token, function(data){
@@ -55,14 +22,15 @@ function getJSONElement(link, token){
 
 }
 
-var API = function(callBack){
+var API = function(){
     this.token = "?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.ImR0aGllcnNAc3R1ZGVudC5hdmFucy5ubCI.l4cG7iZ_OwxremQLf9JTe-d2t85DqS7UFFcDOIN2o4o";
 
-    this.linkGames = "https://zeeslagavans.herokuapp.com/users/me/games";
-    this.linkShips = "https://zeeslagavans.herokuapp.com/ships";
-    this.linkNewGameAI = "https://zeeslagavans.herokuapp.com/games/AI/";
-    this.linkGetGameIds = "https://zeeslagavans.herokuapp.com/games/";
-    callBack();
+    this.linkGames = "https://zeeslagavans2.herokuapp.com/users/me/games";
+    this.linkShips = "https://zeeslagavans2.herokuapp.com/ships";
+    this.linkNewGame = "https://zeeslagavans2.herokuapp.com/games/";
+    this.linkNewGameAI = "https://zeeslagavans2.herokuapp.com/games/AI/";
+    this.linkGetGameIds = "https://zeeslagavans2.herokuapp.com/games/";
+    this.linkPostBoard = "https://zeeslagavans2.herokuapp.com/games/"; //games/:id/gameboards
 }
 
 API.prototype = {
@@ -107,17 +75,28 @@ API.prototype = {
         });
     },
 
-    getNewGame: function(){
-
+    getNewGame: function(callBack){
+        $.ajax({
+           type: "GET",
+            url: this.linkNewGame+this.token,
+            dataType: "json",
+            success: function(data){
+                callBack(data);
+            }
+        });
     },
 
-    getNewGameAI: function(){
+    getNewGameAI: function(callBack){
+        var game;
+
         $.ajax({
             type: "GET",
             url: this.linkNewGameAI+this.token,
             dataType: "json",
             success: function(data){
                 console.log(data);
+                game = data;
+                callBack(game);
             }
         })
     },
@@ -132,6 +111,18 @@ API.prototype = {
             success: function(data){
                 game = data;
                 callBack(game);
+            }
+        });
+    },
+
+    postBoard: function(id, board, callBack){
+        $.ajax({
+            type: "POST",
+            url: this.linkPostBoard+id+"/gameboards/"+this.token,
+            dataType: "json",
+            data: board,
+            success: function(data){
+                console.log(data);
             }
         });
     },
@@ -160,6 +151,7 @@ var Application = function(){
 
     this.api;
     this.game;
+    this.newGame;
 
     this.games;
 
@@ -170,9 +162,7 @@ Application.prototype = {
     init: function(){
         _mouse = new Mouse(0, 0, false, this);
 
-        this.api = new API(function(alertm){
-
-        });
+        this.api = new API();
     },
 
     setShipsNull: function(){
@@ -197,9 +187,10 @@ Application.prototype = {
     },
 
     getNewGame: function(){
-        this.api.getNewGameAI();
         var self = this;
-        this.game = new Game(self);
+        this.api.getNewGameAI(function(game){
+            self.game = new Game(self, game._id);
+        });
     },
 
     getCurrentGames: function(){
@@ -207,29 +198,56 @@ Application.prototype = {
         this.api.getGames(self, function(games){
             self.games = games;
 
-            //var currentGames = $('#currentGames').empty();
 
             var currentGames = $('#currentGames').empty();
 
-            var currentGame = $('.currentGame');
+            //var currentGame = $('.currentGame');
 
             var g;
-            var gameItem;
+            //var gameItem;
             for(var i = 0; i < self.games.length; i++){
                 g = self.games[i];
                 console.log(g);
-                gameItem = currentGame.clone();
-                gameItem.id = g.id;
-                gameItem[0].children[0].innerHTML = g.id;
-                gameItem[0].children[1].innerHTML = g.enemyName;
-                gameItem[0].children[2].innerHTML = g.status;
+                //gameItem = currentGame.clone();
+                //gameItem.id = g.id;
+                //gameItem[0].children[0].innerHTML = g.id;
+                //gameItem[0].children[1].innerHTML = g.enemyName;
+                //gameItem[0].children[2].innerHTML = g.status;
+                var cGame = document.createElement("div");
+                cGame.className = "currentGame";
 
-                currentGames.append(gameItem);
+                var dId = document.createElement("div");
+                dId.className = "game_id";
+
+                var dOpponent = document.createElement("div");
+                dOpponent.className = "opponent";
+
+                var dStatus = document.createElement("div");
+                dStatus.className = "status";
+
+                dId.innerHTML = g.id;
+                dOpponent.innerHTML = g.enemyName;
+                dStatus.innerHTML = g.status;
+
+                $(cGame).append(dId);
+                $(cGame).append(dOpponent);
+                $(cGame).append(dStatus);
+
+                currentGames.append(cGame);
+
+                $(cGame).on('click', function(){
+                    //alert(this.children[0].innerHTML);
+                    self.getGameForId(this.children[0].innerHTML);
+                    $('#page').empty();
+                    var toPage = $('#newGame').clone();
+                    toPage.css('display', 'block');
+                    $('#page').html(toPage);
+                })
             }
-
-            $('.currentGame').on('click', function(){
-                self.getGameForId(this.children[0].innerHTML);
-            });
+            //
+            //$('.currentGame').on('click', function(){
+            //    self.getGameForId(this.children[0].innerHTML);
+            //});
 
         });
 
@@ -241,8 +259,8 @@ Application.prototype = {
     getGameForId: function(id){
         var self = this;
         this.api.getGameForId(id, function(game){
-           self.newGame = game;
-            console.log(self.newGame);
+            self.newGame = new Game(self, game._id);
+            self.newGame.loadGame(game);
         });
     },
 
@@ -256,7 +274,7 @@ Application.prototype = {
  * -------------------------------------- GAME -----------------------------------------
  * -------------------------------------------------------------------------------------**/
 
-var Game = function(application){
+var Game = function(application, id){
 
     this._canvas;
     this.board;
@@ -268,10 +286,13 @@ var Game = function(application){
     this._cellHeight;
 
     this._app = application;
+    this.id = id;
 
     this._hoverCanvas;
     this._to;
     this._from;
+
+
 
     this.init();
 }
@@ -297,13 +318,11 @@ Game.prototype = {
 
             _mouse.pressed = true;
             self._from = this.id;
-            //console.log(_mouse.pressed + ' - ' + self._hoverCanvas);
 
         }).mouseup(function(){
 
             _mouse.pressed = false;
             self._to = self._hoverCanvas;
-            //console.log(_mouse.pressed + ' - ' + self._hoverCanvas);
 
             if(self._to === 'canvas'){
                 var cellForShip = self.board.getCellUnderMouse();
@@ -318,6 +337,7 @@ Game.prototype = {
         this.initBoard();
         this.initDock();
 
+        this.loadControls();
 
 
     },
@@ -331,7 +351,39 @@ Game.prototype = {
 
     getShips: function(){
         return this.dock._ships;
-    }
+    },
+
+    loadControls: function(){
+        var self = this;
+        $('#postBoard').on('click', function(){
+            self.postBoard();
+        })
+    },
+
+    postBoard: function(){
+        // TODO: check of alle schepen in dit Dock een startCell hebben.
+        this._app.api.postBoard(this.id, this.dock.createJSONSHips());
+    },
+
+    loadGame: function(game){
+        // TODO: game inladen
+        /*
+        *   - STATUS
+        *   - Board.LoadShots(game.shots)
+        *   - Board.placeShot
+        * */
+        console.log(game);
+        if(game.yourTurn === true){
+            // TODO: plaats een shot op ENEMYBOARD
+            // TODO: enemy board laden in de canvas
+            this.board.loadEnemyBoard(game.enemyGameboard);
+        }
+        else if(game.yourTurn === false){
+            // TODO: Teken de geplaatste schoten
+        }
+
+     }
+
 }
 
 /**-------------------------------------------------------------------------------------
@@ -378,6 +430,12 @@ var Board = function(cellWidth, cellHeight, canvas, application){
         }
     }).mouseup(function(){
         $('ships').trigger('mouseup');
+    });
+
+    // Shot plaatsen
+    $(this._canvas).on('click', function(){
+       var cell = self.getCellUnderMouse();
+        alert(cell.x + ' - ' + cell.y);
     });
 
 }
@@ -468,8 +526,8 @@ Board.prototype = {
             }
             else{
                     this._context.save();
-                this._context.strokeStyle = 'black';
-                this._context.strokeWidth = '2px';
+                this._context.strokeStyle = 'white';
+                this._context.lineWidth = '3';
                 this._context.globalAlpha = 1;
                 this._context.strokeRect(cell.xPos, cell.yPos, this._cellWidth, this._cellHeight);
                     this._context.restore();
@@ -723,7 +781,80 @@ Board.prototype = {
         if(_mouse.pressed){
             this.drawDragShipBoard();
         }
-        this.hoverCursor();
+        else{
+            this.hoverCursor();
+        }
+    },
+
+    loadEnemyBoard: function(board){
+        // TODO: EnemyGameboard heeft alleen een lijst van shots
+        this.updateEnemyBoard();
+        var shots = board.shots;
+        var shot;
+        for(var i = 0; i < shots.length; i++){
+            shot = shots[i];
+            this.drawEnemyShotsOnBoard(shot);
+        }
+    },
+
+    drawEnemyShotsOnBoard: function(shot){
+        var cell = getCellForCoordinates(shot.x, shot.y);
+
+            this._context.save();
+        this._context.globalAlpha = 0.6;
+        if(shot.isHit){
+            this._context.fillStyle= "red";
+        }
+        else{
+            this._context.fillStyle = "white";
+        }
+        this._context.fillRect(cell.xPos, cell.yPos, this._cellWidth, this._cellHeight);
+            this._context.restore();
+
+        this.updateEnemyBoard();
+    },
+
+    placeShotOnBoard: function(game){
+        //this.getCellForCoordinates(x, y); a, 1 <-- dan kan je xPos en yPos opvragen om te tekenen
+    },
+
+    updateEnemyBoard: function(){
+        this._context.clearRect(0, 0, CANVASWIDTH, CANVASHEIGHT);
+
+        this.drawGrid();
+    }
+}
+
+/**-------------------------------------------------------------------------------------
+ * -------------------------------------- SHOT -----------------------------------------
+ * -------------------------------------------------------------------------------------**/
+var Shot = function(){
+    //{"x":"d","y":2,"isHit":true,"_id":"55423a8510da4dc04faacdb9"}
+    this.x;
+    this.y;
+    this.isHit;
+    this.id;
+}
+
+Shot.prototype = {
+
+    convertToShot: function(element){
+        this.id = element._id;
+        this.x = element.x;
+        this.y = element.y;
+        if(element.isHit){
+            this.isHit = element.isHit;
+        }
+    },
+
+    shotToJSON: function(){
+        var json = {
+            "x":"d",
+            "y":2,
+            "isHit":true,
+            "_id":"55423a8510da4dc04faacdb9"
+        }
+        return json;
     }
 }
 
@@ -810,6 +941,39 @@ Dock.prototype = {
         this._ships = [];
 
         this.getShips();
+    },
+
+    allShipsOnBoard: function(){
+        var ship;
+
+        for(var i = 0; i < this._ships.length; i++){
+            ship = this._ships[i];
+            if(ship.startCell.x !== null && ship.startCell.x !== undefined
+                && ship.startCell.y !== null && ship.startCell.y !== undefined){
+                continue;
+            }
+            else{
+                return false;
+            }
+        }
+        return true;
+    },
+
+    createJSONSHips: function(){
+        if(this.allShipsOnBoard()){
+            var JSONShips = { "ships": []};
+            var ship;
+
+            for(var i = 0; i < this._ships.length; i++){
+                ship = this._ships[i];
+                JSONShips.ships.push(ship.shipToJSON());
+            }
+            return JSONShips;
+        }
+        else {
+            alert('Niet alle schepen staan op het bord.');
+        }
+
     },
 
     getShips: function(){
@@ -960,6 +1124,8 @@ var Ship = function(){
     this.length;
     this.name;
     this.startCell;
+    this.isVertical;
+    this.__v = 0;
 
     this.xPos;
     this.yPos;
@@ -976,7 +1142,20 @@ Ship.prototype = {
             this.startCell.x = element.startCell.x;
             this.startCell.y = element.startCell.y;
         }
+        this.isVertical = false;
         //console.log(this);
+    },
+
+    shipToJSON: function(){
+        var json = {
+            "_id": this.id,
+            "length": this.length,
+            "name": this.name,
+            "startCell" : { "x": this.startCell.x, "y": this.startCell.y },
+            "isVertical" : this.isVertical,
+            "__v": 0
+        }
+        return json;
     }
 }
 

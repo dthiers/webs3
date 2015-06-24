@@ -29,6 +29,12 @@ $(document).ready(function(){
   });
 });
 
+$('.currentGame').on('click', function(){
+    // TODO: ship ding in die pagina laden
+    //loadGameInPage(this.children[0].innerHTML);
+    alert('jemoeder');
+});
+
 window.onresize = function(){
   centerJElementHor($('#menuToggle'));
   centerJElementHor($('#menuItems'));
@@ -72,5 +78,14 @@ function loadMenuItemInPage(item){
     else if(item.getAttribute('name') === 'emptyItem') {
         app.deleteCurrentGames();
     }
+}
 
+function loadGameInPage(gameId){
+    var page = $('#page');
+    var toPage = $('#newGame').clone();
+
+    toPage.css('display', 'block');
+    page.html(toPage);
+
+    app.getGameForId(gameId);
 }
