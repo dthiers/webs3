@@ -435,7 +435,7 @@ var Board = function(cellWidth, cellHeight, canvas, application){
     // Shot plaatsen
     $(this._canvas).on('click', function(){
        var cell = self.getCellUnderMouse();
-        alert(cell.x + ' - ' + cell.y);
+        //alert(cell.x + ' - ' + cell.y);
     });
 
 }
